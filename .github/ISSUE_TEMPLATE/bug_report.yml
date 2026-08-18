@@ -1,0 +1,60 @@
+name: Bug report
+description: Report a reproducible defect without posting secrets or private system data.
+title: "[Bug] "
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Remove usernames, public IP addresses, organization names, tokens, and other sensitive data before submitting logs.
+  - type: input
+    id: version
+    attributes:
+      label: Toolkit version
+      placeholder: 0.1.0
+    validations:
+      required: true
+  - type: input
+    id: windows
+    attributes:
+      label: Windows edition and build
+      placeholder: Windows 11 Pro 24H2, build 26100
+    validations:
+      required: true
+  - type: dropdown
+    id: elevation
+    attributes:
+      label: Was the terminal elevated?
+      options:
+        - "Yes"
+        - "No"
+        - "Not sure"
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Reproduction steps
+      description: Provide the smallest sequence that reproduces the issue.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior and sanitized output
+    validations:
+      required: true
+  - type: checkboxes
+    id: safety
+    attributes:
+      label: Safety check
+      options:
+        - label: I removed secrets and personal or organizational identifiers.
+          required: true

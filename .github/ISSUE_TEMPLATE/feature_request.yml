@@ -1,0 +1,27 @@
+name: Feature request
+description: Propose a focused security, audit, backup, or maintenance improvement.
+title: "[Feature] "
+labels:
+  - enhancement
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What user or maintainer problem should be solved?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed behavior
+      description: Include safe defaults, required privileges, and rollback expectations.
+    validations:
+      required: true
+  - type: textarea
+    id: compatibility
+    attributes:
+      label: Compatibility impact
+      description: Which Windows editions, enterprise policies, or legacy applications may be affected?
+    validations:
+      required: true

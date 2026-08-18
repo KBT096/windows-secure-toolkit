@@ -1,0 +1,15 @@
+# Runtime output
+reports/
+backups/
+*.log
+*.tmp
+
+# Windows
+Thumbs.db
+Desktop.ini
+
+# Editors
+.vs/
+.vscode/
+*.user
+*.suo
