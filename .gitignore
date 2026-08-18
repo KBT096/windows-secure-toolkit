@@ -13,3 +13,7 @@ Desktop.ini
 .vscode/
 *.user
 *.suo
+
+# .NET build output
+src/bin/
+src/obj/
