@@ -10,9 +10,9 @@ trim_trailing_whitespace = true
 charset = utf-8
 end_of_line = crlf
 
-[*.{ps1,psm1,psd1}]
-charset = utf-8-bom
-end_of_line = crlf
+[*.{cs,csproj}]
+charset = utf-8
+end_of_line = lf
 
 [*.md]
 trim_trailing_whitespace = false

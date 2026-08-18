@@ -1,21 +1,34 @@
 # Changelog
 
-All notable changes are documented in this file. Versions follow Semantic Versioning.
+All notable changes are documented here. Versions follow Semantic Versioning.
 
 ## [Unreleased]
 
 No unreleased changes.
 
-## [0.1.0] - 2026-08-18
+## [1.2.0] - 2026-08-19
+
+### Changed
+
+- Replaced the script engine with a C# .NET Framework 4.8 executable.
+- Kept the CMD/BAT entry points and the existing exit-code contract.
+- Reworked the README into a shorter maintainer-style guide.
+- Replaced the repository gate with a CMD smoke-test script.
 
 ### Added
 
-- CMD and BAT launchers compatible with Windows PowerShell 5.1.
-- Read-only Markdown and JSON security audit.
-- Previewable, backed-up, and reversible conservative baseline.
-- Firewall, Defender, UAC, SMBv1, Guest, RDP/NLA, AutoRun, BitLocker, Secure Boot, Windows Update, restart, administrator, and listening-port checks.
-- Defender quick scan, Windows-client Network Protection audit mode, DISM scan, SFC verification, listener inventory, and release metadata check.
-- Windows CI, repository validation, security policy, threat model, contribution guidance, and bilingual documentation.
+- Native local process, registry, WMI, Defender, DISM, SFC, and firewall integration.
+- C# self-test, JSON round-trip check, SHA-256 check, and allowlisted restore validation.
+- A source build path through `build.cmd` and the .NET 6 SDK or newer.
 
-[Unreleased]: https://github.com/KBT096/windows-secure-toolkit/compare/v0.1.0...HEAD
+### Verification note
+
+Build, launch, version, self-test, audit, plan, report generation, listener listing, and release checks were run on Windows 11 Pro for Workstations build 26200. System-changing Apply/Restore remains explicitly unverified on the maintainer machine.
+
+## [0.1.0] - 2026-08-18
+
+The first public Windows toolkit layout and safety documentation.
+
+[Unreleased]: https://github.com/KBT096/windows-secure-toolkit/compare/v1.2.0...HEAD
+[1.2.0]: https://github.com/KBT096/windows-secure-toolkit/releases/tag/v1.2.0
 [0.1.0]: https://github.com/KBT096/windows-secure-toolkit/releases/tag/v0.1.0

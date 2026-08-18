@@ -1,158 +1,106 @@
-# Windows Security & Management Toolkit
+# Windows Secure Toolkit
 
 [![CI](https://github.com/KBT096/windows-secure-toolkit/actions/workflows/ci.yml/badge.svg)](https://github.com/KBT096/windows-secure-toolkit/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-[![Windows PowerShell 5.1](https://img.shields.io/badge/Windows%20PowerShell-5.1%2B-5391FE.svg)](https://learn.microsoft.com/powershell/)
+[![C%23](https://img.shields.io/badge/C%23-.NET%20Framework%204.8-512BD4.svg)](https://dotnet.microsoft.com/)
 
-本项目为 Windows 10/11 与 Windows Server 提供本地安全审计、保守基线加固、配置备份及恢复能力。用户通过 `win_secure.cmd` 或 `win_secure.bat` 进入菜单，无需安装第三方运行时。
+Windows 的安全设置有点像家里的电箱：平时没人想看，真出问题又希望它有记录。
 
-项目默认执行只读检查。需要管理员权限的设置变更会先展示影响范围、请求确认并创建可校验备份；脚本不会下载后直接执行远程代码，也不会自动重启计算机。
+当前版本：`1.2.0`。
 
-## 核心架构与功能
+这个小工具从 CMD/BAT 进去，用 C# 做检查、预览、备份和恢复。它不负责把电脑变成“绝对安全”，只负责把常见的几件事做得清楚一点。
 
-功能分为三个逻辑模块：安全状态审计、可回滚基线、系统维护诊断。
+## 能做什么
 
-### 一、安全状态审计
+- 只读审计：防火墙、Defender、UAC、SMBv1、Guest、RDP/NLA、AutoRun、更新服务和待重启状态；
+- 生成 Markdown 和 JSON 报告；
+- 预览一套保守基线，确认以后才应用；
+- 应用前保存清单、SHA-256 和防火墙策略；
+- 在同一台电脑上校验后恢复备份；
+- Defender 快速扫描、DISM/SFC 只读检查、TCP 监听端口查看；
+- 只查询 GitHub Release 版本，不下载脚本，更不会下载完就“相信它”。
 
-- 检查 Windows 防火墙、Microsoft Defender、UAC、SMBv1、Guest 账户、RDP/NLA、BitLocker、安全启动与 Windows Update。
-- 汇总本地管理员数量、待重启标记和 TCP 监听端口。
-- 同时生成 Markdown 与 JSON 报告，便于人工复核、问题跟踪和后续自动化。
-- 不把检查结果包装成“安全评分”，也不将本地配置快照表述为渗透测试或合规认证。
+## 不会做什么
 
-### 二、可回滚安全基线
+- 不自动开放入站端口、打开 RDP 或创建管理员；
+- 不自动重启，也不替你修复 DISM/SFC；
+- 不上传审计结果、用户名、IP 或其他本机数据；
+- 不绕过组织策略、MDM 或安全产品；
+- 不把静态检查写成“所有 Windows 版本都实测通过”。
 
-- 开启域、专用和公用网络的 Windows 防火墙。
-- 开启 Defender 实时保护与潜在有害应用（PUA）防护。
-- 在 Windows 客户端将 Defender 网络保护设为审核模式，先收集兼容性证据；Windows Server 默认不修改该项。
-- 开启 UAC 与安全桌面提示。
-- 禁用 SMBv1、Guest 账户和所有驱动器的 AutoRun。
-- 仅在 RDP 已启用时要求网络级别身份验证（NLA）。
-- 应用前保存配置清单、SHA-256 校验文件和完整防火墙策略导出。
+如果你的电脑由公司策略管理，策略可能在下一次刷新时把本地设置改回去。这不是程序闹脾气，是 Windows 的工作方式。
 
-### 三、系统维护诊断
+## 快速开始
 
-- 运行 Microsoft Defender 快速扫描。
-- 使用 `DISM /ScanHealth` 与 `SFC /verifyonly` 执行只读系统验证。
-- 列出 TCP 监听地址、端口、PID 与进程名称。
-- 只查询 GitHub Release 元数据进行版本比较，不自动覆盖本地脚本。
-
-## 安全边界
-
-本工具不会：
-
-- 绕过组织策略、篡改防护或端点管理平台；
-- 自动开放入站端口、启用远程桌面或创建管理员账户；
-- 自动修复 DISM/SFC 发现的问题；
-- 上传审计结果、用户名、IP 地址或其他本机数据；
-- 从短链接、动态脚本地址或未固定来源下载并执行代码；
-- 承诺某一基线适合所有个人、企业、学校或生产环境。
-
-CMD 入口只为新建的子 PowerShell 进程设置 `ExecutionPolicy Bypass`，不会写入 CurrentUser 或 LocalMachine 配置；由 Group Policy 设置的 MachinePolicy/UserPolicy 仍具有更高优先级。
-
-详细边界见 [威胁模型](docs/THREAT_MODEL.md)。
-
-## 部署与使用指南
-
-### 系统要求
-
-- Windows 10/11，或 Windows Server 2019/2022/2025；
-- Windows PowerShell 5.1 或更高版本；
-- 审计通常可使用标准权限；加固、恢复、Defender 扫描与系统验证需要管理员权限；
-- 组织管理设备应先与管理员确认组策略、MDM 和安全产品的优先级。
-
-首版验证范围：
-
-| 环境 | 已验证 | 未验证 |
-| --- | --- | --- |
-| Windows 11 专业工作站版 build 26200 + Windows PowerShell 5.1 | CMD/BAT 启动、语法、自检、审计报告、监听端口、基线预览 | 实际应用与恢复 |
-| GitHub Actions `windows-latest` | 首次推送后由公开 CI 记录 | 提权后的系统配置变更 |
-| Windows 10 与 Windows Server 2019/2022/2025 | 目标兼容环境 | 首版尚无对应实机变更证据 |
-
-未验证项目不会在发布说明中写成“已通过实机测试”。
-
-### 下载
-
-建议从仓库的 [Releases](https://github.com/KBT096/windows-secure-toolkit/releases) 页面下载带版本号的源代码包，解压后在本地运行。也可以使用 Git：
-
-```powershell
-git clone https://github.com/KBT096/windows-secure-toolkit.git
-cd windows-secure-toolkit
-```
-
-### 第一次运行
-
-先使用标准权限执行只读审计：
+支持 Windows 10/11 和 Windows Server 2019/2022/2025。运行已编译版本只需要 .NET Framework 4.8；从源码构建需要 .NET 6 SDK 或更高版本。
 
 ```cmd
+build.cmd
+win_secure.cmd self-test
 win_secure.cmd audit
-```
-
-报告默认写入：
-
-```text
-%LOCALAPPDATA%\WindowsSecureToolkit\Reports
-```
-
-在应用设置之前，先预览变更：
-
-```cmd
 win_secure.cmd plan
 ```
 
-确认兼容性后，以管理员身份打开 CMD 或 PowerShell，再执行：
+第一次使用建议只读审计，然后看计划：
+
+```cmd
+win_secure.cmd audit
+win_secure.cmd plan
+```
+
+确认影响范围并以管理员身份打开 CMD 后，才运行：
 
 ```cmd
 win_secure.cmd apply
 ```
 
-备份默认写入：
-
-```text
-%ProgramData%\WindowsSecureToolkit\Backups
-```
-
-### 命令一览
-
-| 命令 | 权限 | 行为 |
-| --- | --- | --- |
-| `win_secure.cmd` | 标准 | 打开交互菜单 |
-| `win_secure.cmd audit [路径]` | 标准 | 生成 Markdown + JSON 审计报告 |
-| `win_secure.cmd plan` | 标准 | 预览基线，不修改系统 |
-| `win_secure.cmd apply` | 管理员 | 备份并交互式应用基线 |
-| `win_secure.cmd restore "备份路径"` | 管理员 | 校验并恢复本工具管理的设置 |
-| `win_secure.cmd scan` | 管理员 | 运行 Defender 快速扫描 |
-| `win_secure.cmd verify` | 管理员 | 运行 DISM/SFC 只读验证 |
-| `win_secure.cmd ports` | 标准 | 查看 TCP 监听端口 |
-| `win_secure.cmd update` | 标准 | 查询最新 GitHub Release |
-| `win_secure.cmd self-test` | 标准 | 运行无修改自检 |
-
-### 恢复示例
-
-恢复前不要修改 `manifest.json` 或 `manifest.sha256`：
+恢复示例：
 
 ```cmd
 win_secure.cmd restore "C:\ProgramData\WindowsSecureToolkit\Backups\20260818-120000"
 ```
 
-恢复只接受当前计算机生成、SHA-256 匹配且字段落在固定白名单内的清单；只处理本工具记录的设置，不删除备份，也不自动重启计算机。若系统由组策略或安全产品管理，策略可能在恢复后再次覆盖本地值。
+## 命令
 
-## 验证
+| 命令 | 说明 |
+| --- | --- |
+| `win_secure.cmd` | 打开菜单 |
+| `win_secure.cmd audit [路径]` | 生成 Markdown + JSON 审计报告 |
+| `win_secure.cmd plan` | 预览，不修改系统 |
+| `win_secure.cmd apply [--yes]` | 备份并应用基线 |
+| `win_secure.cmd restore <路径>` | 校验并恢复备份 |
+| `win_secure.cmd scan` | Defender 快速扫描 |
+| `win_secure.cmd verify` | DISM/SFC 只读验证 |
+| `win_secure.cmd ports` | TCP 监听端口 |
+| `win_secure.cmd update` | 查询最新 Release |
+| `win_secure.cmd version` | 输出版本号 |
+| `win_secure.cmd self-test` | 无修改自检 |
 
-仓库测试同时覆盖 PowerShell 语法、Windows PowerShell 5.1 自检、真实 CMD 启动、中文批处理编码/换行、审计报告生成、必需文件与危险远程执行模式：
+`win_secure.bat` 是兼容入口，功能和 `.cmd` 相同。
 
-```powershell
-.\scripts\Test-Repository.ps1
-```
+## 目录里有什么
 
-静态检查通过不等于所有 Windows 版本上的实际策略变更都已验证。发布说明会区分“CI 验证”和“真实 Windows 版本运行验证”。
+- `src/WinSecure.cs`：核心实现；
+- `src/WindowsSecureToolkit.csproj`：.NET Framework 4.8 项目文件；
+- `build.cmd`：构建核心程序；
+- `win_secure.cmd` / `win_secure.bat`：用户入口；
+- `scripts/Test-Repository.cmd`：构建、入口和报告烟雾测试；
+- `docs/THREAT_MODEL.md`：边界和威胁模型。
 
-## 贡献与安全报告
+## 验证范围
 
-- 提交变更前请阅读 [贡献指南](CONTRIBUTING.md)。
-- 普通问题可使用 [GitHub Issues](https://github.com/KBT096/windows-secure-toolkit/issues)。
-- 漏洞或可能暴露系统数据的问题请按 [安全策略](SECURITY.md) 私下报告。
-- 当前维护者：[@KBT096](https://github.com/KBT096)。
+本机 Windows 11 专业工作站版 build 26200 已验证：C# 构建、CMD/BAT 启动、版本、自检、审计、计划、报告生成、端口查看和 Release 检查。公开 GitHub Actions 也会在 Windows runner 上构建并运行烟雾测试。
+
+实际修改系统的 Apply/Restore 流程没有在维护者机器上执行，因此发布说明不会把它写成已经覆盖所有环境。请先看计划，备份也别删，电脑通常不会因为你多看一眼就生气。
+
+## 参与和报告问题
+
+- 普通问题请使用 [Issues](https://github.com/KBT096/windows-secure-toolkit/issues)；
+- 可能暴露系统数据的问题请按照 [SECURITY.md](SECURITY.md) 私下报告；
+- 提交代码前请阅读 [CONTRIBUTING.md](CONTRIBUTING.md)。
+
+当前维护者：[@KBT096](https://github.com/KBT096)。
 
 ## 许可证
 
-项目以 [MIT License](LICENSE) 发布。Windows、Microsoft Defender 和 PowerShell 是其各自权利人的商标或产品名称；本项目与 Microsoft 无隶属或认可关系。
+[MIT License](LICENSE)。本项目与 Microsoft 没有隶属或认可关系。

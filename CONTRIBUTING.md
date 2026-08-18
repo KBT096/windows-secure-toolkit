@@ -1,10 +1,10 @@
 # Contributing
 
-Focused bug fixes, Windows compatibility evidence, documentation corrections, and reversible security improvements are welcome.
+Small, real improvements are welcome: Windows compatibility reports, bug fixes, clearer output, safer backups, and documentation corrections.
 
 ## Before opening a change
 
-1. Search existing issues and pull requests.
+1. Search existing Issues and pull requests.
 2. State the Windows edition, build, privilege level, and management context.
 3. Explain the user problem and compatibility impact.
 4. Remove secrets, public IP addresses, usernames, organization names, and raw audit reports.
@@ -23,29 +23,27 @@ Any new system mutation must include:
 
 Do not add:
 
-- `Invoke-Expression` or equivalent dynamic execution;
+- dynamic command execution from user-controlled text;
 - remote download-and-execute pipelines;
 - URL shorteners or mutable third-party script endpoints;
 - hidden telemetry or report uploads;
 - automatic port opening, RDP enablement, administrator creation, or reboot;
-- claims that static checks equal real Windows runtime validation.
+- claims that static checks equal runtime validation on every Windows edition.
 
-## Encoding and compatibility
+## Files and validation
 
-- `.cmd/.bat`: UTF-8 without BOM, CRLF.
-- `.ps1/.psm1/.psd1`: UTF-8 with BOM, CRLF for Windows PowerShell 5.1.
-- Public commands must continue to work through `cmd.exe /d`.
-- Avoid PowerShell 7-only syntax unless the minimum version is deliberately changed in a major release.
+- `.cmd/.bat`: UTF-8 without BOM, CRLF;
+- `.cs/.csproj`: UTF-8, LF;
+- public commands must continue to work through `cmd.exe /d`;
+- keep the .NET Framework 4.8 target unless a deliberate version change is documented.
 
-## Validation
+Run the repository gate before opening a pull request:
 
-Run:
-
-```powershell
-.\scripts\Test-Repository.ps1
+```cmd
+scripts\Test-Repository.cmd
 ```
 
-For system-changing code, also provide a reversible runtime test on the affected Windows edition or state explicitly why it remains unverified.
+For system-changing code, provide a reversible runtime test on the affected Windows edition or state explicitly why it remains unverified.
 
 ## Pull requests
 
@@ -53,6 +51,6 @@ Keep each pull request focused. Complete the safety checklist, update the change
 
 - `0`: success;
 - `1`: unexpected top-level failure;
-- `2`: invalid launcher use;
+- `2`: invalid launcher use or missing privilege;
 - `4`: partial operation failure;
 - `5`: user canceled.
