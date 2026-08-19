@@ -4,6 +4,8 @@
 
 Use [GitHub Issues](https://github.com/KBT096/windows-secure-toolkit/issues) after checking the README and existing reports.
 
+For users who do not want to build from source, the Releases page includes a versioned Windows x64 package. Please include the package version when reporting a problem.
+
 Provide:
 
 - toolkit version;

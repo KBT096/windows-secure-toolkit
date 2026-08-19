@@ -34,6 +34,8 @@ Windows 的安全设置有点像家里的电箱：平时没人想看，真出问
 
 支持 Windows 10/11 和 Windows Server 2019/2022/2025。运行已编译版本只需要 .NET Framework 4.8；从源码构建需要 .NET 6 SDK 或更高版本。
 
+不想装 SDK？可以从 [v1.2.0 Release](https://github.com/KBT096/windows-secure-toolkit/releases/tag/v1.2.0) 下载 `windows-secure-toolkit-v1.2.0-win-x64.zip`，解压后直接运行入口文件。
+
 ```cmd
 build.cmd
 win_secure.cmd self-test
