@@ -6,7 +6,7 @@
 
 Windows 的安全设置有点像家里的电箱：平时没人想看，真出问题又希望它有记录。
 
-当前版本：`1.2.0`。
+当前版本：`1.2.1`。
 
 这个小工具从 CMD/BAT 进去，用 C# 做检查、预览、备份和恢复。它不负责把电脑变成“绝对安全”，只负责把常见的几件事做得清楚一点。
 
@@ -34,7 +34,7 @@ Windows 的安全设置有点像家里的电箱：平时没人想看，真出问
 
 支持 Windows 10/11 和 Windows Server 2019/2022/2025。运行已编译版本只需要 .NET Framework 4.8；从源码构建需要 .NET 6 SDK 或更高版本。
 
-不想装 SDK？可以从 [v1.2.0 Release](https://github.com/KBT096/windows-secure-toolkit/releases/tag/v1.2.0) 下载 `windows-secure-toolkit-v1.2.0-win-x64.zip`，解压后直接运行入口文件。
+不想装 SDK？可以从 [v1.2.1 Release](https://github.com/KBT096/windows-secure-toolkit/releases/tag/v1.2.1) 下载 `windows-secure-toolkit-v1.2.1-win-x64.zip`，解压后直接运行入口文件。
 
 ```cmd
 build.cmd

@@ -21,9 +21,18 @@ namespace WindowsSecureToolkit
 {
     internal static class Program
     {
-        private const string Version = "1.2.0";
+        private const string Version = "1.2.1";
         private const string ToolkitName = "Windows Secure Toolkit";
         private const string ReleaseApiUrl = "https://api.github.com/repos/KBT096/windows-secure-toolkit/releases/latest";
+        private static readonly string[] RegistryAllowlist =
+        {
+            "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\System\\EnableLUA",
+            "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\System\\ConsentPromptBehaviorAdmin",
+            "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\System\\PromptOnSecureDesktop",
+            "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\Explorer\\NoDriveTypeAutoRun",
+            "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Terminal Server\\WinStations\\RDP-Tcp\\UserAuthentication",
+            "HKLM\\SOFTWARE\\Microsoft\\Windows Defender\\Windows Defender Exploit Guard\\Network Protection\\EnableNetworkProtection"
+        };
         private static readonly JavaScriptSerializer Json = new JavaScriptSerializer { MaxJsonLength = int.MaxValue };
         private static bool noColor;
 
@@ -824,22 +833,18 @@ namespace WindowsSecureToolkit
 
         private static void ValidateRegistryAllowlist(IEnumerable<RegistrySnapshot> values)
         {
-            var allowed = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
-            {
-                "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\System\\EnableLUA",
-                "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\System\\ConsentPromptBehaviorAdmin",
-                "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\System\\PromptOnSecureDesktop",
-                "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\Explorer\\NoDriveTypeAutoRun",
-                "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Terminal Server\\WinStations\\RDP-Tcp\\UserAuthentication",
-                "HKLM\\SOFTWARE\\Microsoft\\Windows Defender\\Windows Defender Exploit Guard\\Network Protection\\EnableNetworkProtection"
-            };
+            var allowed = new HashSet<string>(RegistryAllowlist, StringComparer.OrdinalIgnoreCase);
             RegistrySnapshot[] array = values == null ? new RegistrySnapshot[0] : values.ToArray();
             if (array.Length != allowed.Count) throw new InvalidOperationException("备份中的注册表项目数量不正确。");
+            var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             foreach (RegistrySnapshot item in array)
             {
-                if (item == null || !allowed.Contains(item.FullPath + "\\" + item.Name)) throw new InvalidOperationException("备份包含未授权的注册表目标。");
+                string target = item == null ? string.Empty : item.FullPath + "\\" + item.Name;
+                if (!allowed.Contains(target)) throw new InvalidOperationException("备份包含未授权的注册表目标。");
+                if (!seen.Add(target)) throw new InvalidOperationException("备份包含重复的注册表目标。");
                 if (item.Exists && item.Kind != "DWord") throw new InvalidOperationException("备份包含非 DWord 注册表值。");
             }
+            if (!seen.SetEquals(allowed)) throw new InvalidOperationException("备份没有覆盖完整的注册表白名单。");
         }
 
         private static int RunRestore(string suppliedPath)
@@ -1253,6 +1258,24 @@ namespace WindowsSecureToolkit
             }
             catch (Exception ex) { failures.Add("清单 JSON 测试失败：" + ex.Message); }
 
+            try
+            {
+                RegistrySnapshot[] validRegistry = RegistryAllowlist.Select(CreateSelfTestRegistrySnapshot).ToArray();
+                ValidateRegistryAllowlist(validRegistry);
+                RegistrySnapshot[] duplicateRegistry = validRegistry.ToArray();
+                duplicateRegistry[duplicateRegistry.Length - 1] = duplicateRegistry[0];
+                try
+                {
+                    ValidateRegistryAllowlist(duplicateRegistry);
+                    failures.Add("重复的注册表清单项目没有被拒绝。");
+                }
+                catch (InvalidOperationException)
+                {
+                    // Expected: restore manifests must contain each allowlisted target once.
+                }
+            }
+            catch (Exception ex) { failures.Add("注册表白名单测试失败：" + ex.Message); }
+
             string temp = Path.Combine(Path.GetTempPath(), "windows-secure-toolkit-selftest-" + Guid.NewGuid().ToString("N"));
             try
             {
@@ -1277,6 +1300,21 @@ namespace WindowsSecureToolkit
             }
             Message("完成", "WinSecure C# 核心自检通过。");
             return 0;
+        }
+
+        private static RegistrySnapshot CreateSelfTestRegistrySnapshot(string target)
+        {
+            int hiveSeparator = target.IndexOf('\\');
+            int nameSeparator = target.LastIndexOf('\\');
+            return new RegistrySnapshot
+            {
+                Hive = target.Substring(0, hiveSeparator),
+                SubKey = target.Substring(hiveSeparator + 1, nameSeparator - hiveSeparator - 1),
+                Name = target.Substring(nameSeparator + 1),
+                Exists = false,
+                Kind = "DWord",
+                Value = 0
+            };
         }
     }
 }
