@@ -4,7 +4,11 @@ All notable changes are documented here. Versions follow Semantic Versioning.
 
 ## [Unreleased]
 
-No unreleased changes.
+### Added
+
+- A read-only `doctor` command for platform, .NET Framework, WMI, native-tool, and Defender capability checks.
+- `doctor --json` output with a versioned document schema for automation and issue reports.
+- A Windows validation matrix documenting what CI and local smoke tests do and do not prove.
 
 ## [1.2.1] - 2026-08-20
 
