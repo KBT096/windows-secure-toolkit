@@ -10,7 +10,7 @@ Windows 的安全设置有点像家里的电箱：平时没人想看，真出问
 
 这个小工具从 CMD/BAT 进去，用 C# 做检查、预览、备份和恢复。它不负责把电脑变成“绝对安全”，只负责把常见的几件事做得清楚一点。
 
-## 能做什么
+## 核心架构与功能
 
 - 只读审计：防火墙、Defender、UAC、SMBv1、Guest、RDP/NLA、AutoRun、更新服务和待重启状态；
 - 生成 Markdown 和 JSON 报告；
@@ -20,7 +20,7 @@ Windows 的安全设置有点像家里的电箱：平时没人想看，真出问
 - Defender 快速扫描、DISM/SFC 只读检查、TCP 监听端口查看；
 - 只查询 GitHub Release 版本，不下载脚本，更不会下载完就“相信它”。
 
-## 不会做什么
+## 注意事项
 
 - 不自动开放入站端口、打开 RDP 或创建管理员；
 - 不自动重启，也不替你修复 DISM/SFC；
@@ -30,7 +30,7 @@ Windows 的安全设置有点像家里的电箱：平时没人想看，真出问
 
 如果你的电脑由公司策略管理，策略可能在下一次刷新时把本地设置改回去。这不是程序闹脾气，是 Windows 的工作方式。
 
-## 快速开始
+## 📖📖 快速入门：如何配置与运行 Windows Secure Toolkit？
 
 支持 Windows 10/11 和 Windows Server 2019/2022/2025。运行已编译版本只需要 .NET Framework 4.8；从源码构建需要 .NET 6 SDK 或更高版本。
 
@@ -102,6 +102,10 @@ win_secure.cmd restore "C:\ProgramData\WindowsSecureToolkit\Backups\20260818-120
 - 提交代码前请阅读 [CONTRIBUTING.md](CONTRIBUTING.md)。
 
 当前维护者：[@KBT096](https://github.com/KBT096)。
+
+## 版权与组件声明
+
+本项目自身代码遵循 [MIT License](LICENSE) 协议发布。构建目标使用 .NET Framework 4.8；运行时调用 `netsh`、`dism`、`sfc`、`netstat`、WMI 和 Microsoft Defender 等 Windows 系统组件，相关组件的授权和使用条件以 Microsoft Windows 许可条款为准。CI 使用 GitHub Actions 与固定提交的 `actions/checkout`，仅用于仓库验证，不随工具运行。本仓库不捆绑 YABS、NextTrace 或其他 VPS 探针组件。
 
 ## 许可证
 
