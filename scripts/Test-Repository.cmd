@@ -22,6 +22,7 @@ call :require_file "%TOOL_ROOT%README.md"
 call :require_file "%TOOL_ROOT%LICENSE"
 call :require_file "%TOOL_ROOT%SECURITY.md"
 call :require_file "%TOOL_ROOT%docs\THREAT_MODEL.md"
+call :require_file "%TOOL_ROOT%docs\WINDOWS_VALIDATION.md"
 
 findstr /s /i /n "Invoke-Expression certutil -decode" "%TOOL_ROOT%src\*.cs" "%TOOL_ROOT%*.cmd" >nul 2>nul
 if not errorlevel 1 (
@@ -42,6 +43,8 @@ call :run_ok self-test
 call :run_ok version
 call :run_ok help
 call :run_ok plan
+call :run_ok doctor
+call :run_ok_args doctor --json
 
 if exist "%TEST_ROOT%" rmdir /s /q "%TEST_ROOT%"
 mkdir "%TEST_ROOT%" >nul 2>nul
@@ -102,5 +105,16 @@ if errorlevel 1 (
     set /a FAILURES+=1
 ) else (
     echo [完成] 命令通过：%~1
+)
+exit /b 0
+
+:run_ok_args
+set /a CHECKS+=1
+call "%TOOL_ROOT%win_secure.cmd" %~1 %~2 >nul
+if errorlevel 1 (
+    echo [失败] 命令失败：%~1 %~2
+    set /a FAILURES+=1
+) else (
+    echo [完成] 命令通过：%~1 %~2
 )
 exit /b 0

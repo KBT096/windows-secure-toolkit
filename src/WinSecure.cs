@@ -21,9 +21,15 @@ namespace WindowsSecureToolkit
 {
     internal static class Program
     {
-        private const string Version = "1.2.1";
+        private const string Version = "1.3.0";
         private const string ToolkitName = "Windows Secure Toolkit";
         private const string ReleaseApiUrl = "https://api.github.com/repos/KBT096/windows-secure-toolkit/releases/latest";
+        private static readonly HashSet<string> SupportedBackupVersions = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+        {
+            Version,
+            "1.2.0",
+            "1.2.1"
+        };
         private static readonly string[] RegistryAllowlist =
         {
             "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\System\\EnableLUA",
@@ -78,6 +84,7 @@ namespace WindowsSecureToolkit
                     case "scan": return RunDefenderScan();
                     case "verify": return RunSystemVerify();
                     case "ports": return ShowListeningPorts();
+                    case "doctor": return RunDoctor(options.JsonOutput);
                     case "update": return CheckForUpdate();
                     case "version": Console.WriteLine(Version); return 0;
                     case "self-test": return RunSelfTest();
@@ -131,6 +138,7 @@ namespace WindowsSecureToolkit
             Console.WriteLine("  scan                         运行 Defender 快速扫描");
             Console.WriteLine("  verify                       运行 DISM/SFC 只读验证");
             Console.WriteLine("  ports                        查看 TCP 监听端口");
+            Console.WriteLine("  doctor [--json]             运行本机兼容性诊断（只读）");
             Console.WriteLine("  update                       查询 GitHub 最新 Release");
             Console.WriteLine("  version                      输出版本号");
             Console.WriteLine("  self-test                    运行无修改自检");
@@ -151,6 +159,7 @@ namespace WindowsSecureToolkit
             Console.WriteLine("7. 查看监听端口");
             Console.WriteLine("8. 检查版本");
             Console.WriteLine("9. 自检");
+            Console.WriteLine("10. 本机兼容性诊断（只读）");
             Console.WriteLine("0. 退出");
             Console.Write("请选择：");
             string choice = Console.ReadLine();
@@ -167,6 +176,7 @@ namespace WindowsSecureToolkit
                 case "7": return ShowListeningPorts();
                 case "8": return CheckForUpdate();
                 case "9": return RunSelfTest();
+                case "10": return RunDoctor(false);
                 case "0": return 0;
                 default: Message("错误", "没有这个选项。"); return 2;
             }
@@ -180,6 +190,7 @@ namespace WindowsSecureToolkit
             public bool Yes;
             public bool DryRun;
             public bool NoColor;
+            public bool JsonOutput;
 
             public static CliOptions Parse(string[] args)
             {
@@ -204,6 +215,7 @@ namespace WindowsSecureToolkit
                     if (arg.Equals("--yes", StringComparison.OrdinalIgnoreCase) || arg.Equals("-Yes", StringComparison.OrdinalIgnoreCase)) result.Yes = true;
                     else if (arg.Equals("--dry-run", StringComparison.OrdinalIgnoreCase) || arg.Equals("-DryRun", StringComparison.OrdinalIgnoreCase)) result.DryRun = true;
                     else if (arg.Equals("--no-color", StringComparison.OrdinalIgnoreCase) || arg.Equals("-NoColor", StringComparison.OrdinalIgnoreCase)) result.NoColor = true;
+                    else if (arg.Equals("--json", StringComparison.OrdinalIgnoreCase) || arg.Equals("-Json", StringComparison.OrdinalIgnoreCase)) result.JsonOutput = true;
                     else if (arg.Equals("--backup-path", StringComparison.OrdinalIgnoreCase) || arg.Equals("-BackupPath", StringComparison.OrdinalIgnoreCase))
                     {
                         if (index >= args.Length) throw new ArgumentException(arg + " 缺少路径。");
@@ -231,7 +243,7 @@ namespace WindowsSecureToolkit
                 if (action == "listeningports") return "ports";
                 if (action == "updatecheck") return "update";
                 if (action == "selftest") return "self-test";
-                string[] known = { "menu", "audit", "apply", "plan", "restore", "scan", "verify", "ports", "update", "version", "self-test", "help" };
+                string[] known = { "menu", "audit", "apply", "plan", "restore", "scan", "verify", "ports", "doctor", "update", "version", "self-test", "help" };
                 if (!known.Contains(action)) throw new ArgumentException("未知命令：" + value);
                 return action;
             }
@@ -815,7 +827,7 @@ namespace WindowsSecureToolkit
 
             BaselineSnapshot snapshot = Json.Deserialize<BaselineSnapshot>(File.ReadAllText(manifestPath, Encoding.UTF8));
             if (snapshot == null || snapshot.SchemaVersion != 1) throw new InvalidOperationException("不支持的备份格式版本。");
-            if (!snapshot.ToolkitVersion.Equals(Version, StringComparison.OrdinalIgnoreCase)) throw new InvalidOperationException("备份版本与当前程序不匹配：" + snapshot.ToolkitVersion);
+            if (!IsSupportedBackupVersion(snapshot.ToolkitVersion)) throw new InvalidOperationException("备份版本与当前程序不兼容：" + snapshot.ToolkitVersion);
             if (!Environment.MachineName.Equals(snapshot.ComputerName, StringComparison.OrdinalIgnoreCase)) throw new InvalidOperationException("备份不是由当前计算机生成的。");
             if (!string.Equals(snapshot.FirewallExportFile, "firewall.wfw", StringComparison.Ordinal)) throw new InvalidOperationException("防火墙导出文件名不在白名单内。");
             string firewallPath = Path.Combine(directory, snapshot.FirewallExportFile);
@@ -829,6 +841,11 @@ namespace WindowsSecureToolkit
             }
             if (snapshot.Guest != null && (string.IsNullOrWhiteSpace(snapshot.Guest.Sid) || !snapshot.Guest.Sid.EndsWith("-501", StringComparison.OrdinalIgnoreCase))) throw new InvalidOperationException("备份中的 Guest SID 不合法。");
             return snapshot;
+        }
+
+        private static bool IsSupportedBackupVersion(string toolkitVersion)
+        {
+            return !string.IsNullOrWhiteSpace(toolkitVersion) && SupportedBackupVersions.Contains(toolkitVersion);
         }
 
         private static void ValidateRegistryAllowlist(IEnumerable<RegistrySnapshot> values)
@@ -1062,6 +1079,188 @@ namespace WindowsSecureToolkit
             return "Windows（版本信息不可用）";
         }
 
+        private sealed class DoctorCheck
+        {
+            public string Id;
+            public string Status;
+            public string Summary;
+            public string Detail;
+            public bool Required;
+        }
+
+        private sealed class DoctorDocument
+        {
+            public int SchemaVersion = 1;
+            public string ToolkitVersion = Version;
+            public string GeneratedUtc;
+            public string ComputerName;
+            public List<DoctorCheck> Checks;
+        }
+
+        private static int RunDoctor(bool jsonOutput)
+        {
+            List<DoctorCheck> checks = CollectDoctorChecks();
+            int failures = checks.Count(check => check.Status == "Fail");
+            if (jsonOutput)
+            {
+                Console.WriteLine(Json.Serialize(new DoctorDocument
+                {
+                    GeneratedUtc = DateTime.UtcNow.ToString("o"),
+                    ComputerName = Environment.MachineName,
+                    Checks = checks
+                }));
+                return failures == 0 ? 0 : 4;
+            }
+
+            Section("本机兼容性诊断（只读）");
+            Console.WriteLine("检查项              状态          说明");
+            Console.WriteLine("------------------------------------------------------------");
+            foreach (DoctorCheck check in checks)
+            {
+                Console.WriteLine("{0,-19} {1,-11} {2}", check.Id, check.Status, check.Summary);
+                if (!string.IsNullOrWhiteSpace(check.Detail)) Console.WriteLine("                    {0}", check.Detail);
+            }
+            int unavailable = checks.Count(check => check.Status == "Unavailable");
+            if (failures > 0)
+            {
+                Message("错误", "诊断发现 " + failures + " 个阻断项；没有修改系统。");
+                return 4;
+            }
+            Message(unavailable > 0 ? "警告" : "完成", "诊断完成：" + checks.Count + " 项检查，没有修改系统。" + (unavailable > 0 ? "部分能力需要人工复核。" : string.Empty));
+            return 0;
+        }
+
+        private static List<DoctorCheck> CollectDoctorChecks()
+        {
+            var checks = new List<DoctorCheck>();
+            bool isWindows = Environment.OSVersion.Platform == PlatformID.Win32NT;
+            checks.Add(new DoctorCheck
+            {
+                Id = "platform",
+                Status = isWindows ? "Pass" : "Fail",
+                Summary = isWindows ? "检测到 Windows 平台" : "当前平台不是 Windows",
+                Detail = Environment.OSVersion.VersionString,
+                Required = true
+            });
+
+            string osDescription = GetOsDescription();
+            bool wmiAvailable = !string.IsNullOrWhiteSpace(osDescription) && osDescription.IndexOf("不可用", StringComparison.OrdinalIgnoreCase) < 0;
+            checks.Add(new DoctorCheck
+            {
+                Id = "wmi",
+                Status = wmiAvailable ? "Pass" : "Unavailable",
+                Summary = wmiAvailable ? "WMI 可以读取操作系统信息" : "WMI 操作系统信息不可用",
+                Detail = osDescription,
+                Required = false
+            });
+
+            int? frameworkRelease = ReadDotNetFrameworkRelease();
+            checks.Add(new DoctorCheck
+            {
+                Id = "dotnet-framework",
+                Status = frameworkRelease.HasValue && frameworkRelease.Value >= 528040 ? "Pass" : (frameworkRelease.HasValue ? "Fail" : "Unavailable"),
+                Summary = frameworkRelease.HasValue ? ".NET Framework 4.8 Release key：" + frameworkRelease.Value : "无法读取 .NET Framework 4.x Release key",
+                Detail = "要求 Release >= 528040（.NET Framework 4.8）",
+                Required = true
+            });
+
+            checks.Add(new DoctorCheck
+            {
+                Id = "administrator",
+                Status = IsAdministrator() ? "Info" : "Review",
+                Summary = IsAdministrator() ? "当前进程具有管理员权限" : "当前进程不是管理员权限",
+                Detail = "审计、doctor 和 plan 不需要提权；apply、restore、scan、verify 的部分步骤需要管理员权限。",
+                Required = false
+            });
+
+            AddToolCheck(checks, "netsh", "netsh.exe 可用（防火墙状态与备份）", true);
+            AddToolCheck(checks, "netstat", "netstat.exe 可用（监听端口）", true);
+            AddToolCheck(checks, "dism", "dism.exe 可用（SMBv1 与系统验证）", true);
+            AddToolCheck(checks, "sfc", "sfc.exe 可用（系统文件验证）", true);
+
+            string defenderPath = FindDefenderExecutable();
+            checks.Add(new DoctorCheck
+            {
+                Id = "defender",
+                Status = string.IsNullOrWhiteSpace(defenderPath) ? "Unavailable" : "Pass",
+                Summary = string.IsNullOrWhiteSpace(defenderPath) ? "未找到 MpCmdRun.exe" : "找到 Microsoft Defender 命令行工具",
+                Detail = string.IsNullOrWhiteSpace(defenderPath) ? "可能由组织策略、版本差异或第三方防护软件导致。" : defenderPath,
+                Required = false
+            });
+
+            checks.Add(new DoctorCheck
+            {
+                Id = "release-api",
+                Status = ReleaseApiUrl.StartsWith("https://api.github.com/", StringComparison.OrdinalIgnoreCase) ? "Pass" : "Fail",
+                Summary = "Release 查询地址固定为 GitHub HTTPS API",
+                Detail = ReleaseApiUrl,
+                Required = false
+            });
+            return checks;
+        }
+
+        private static void AddToolCheck(List<DoctorCheck> checks, string id, string summary, bool required)
+        {
+            string executable = FindExecutable(id + ".exe");
+            checks.Add(new DoctorCheck
+            {
+                Id = id,
+                Status = string.IsNullOrWhiteSpace(executable) ? "Unavailable" : "Pass",
+                Summary = string.IsNullOrWhiteSpace(executable) ? summary.Replace("可用", "未找到") : summary,
+                Detail = string.IsNullOrWhiteSpace(executable) ? "当前环境没有找到该系统工具；对应命令可能无法运行。" : executable,
+                Required = required
+            });
+        }
+
+        private static string FindDefenderExecutable()
+        {
+            var candidates = new List<string>();
+            string programFiles = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles);
+            string programFilesX86 = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86);
+            if (!string.IsNullOrWhiteSpace(programFiles)) candidates.Add(Path.Combine(programFiles, "Windows Defender", "MpCmdRun.exe"));
+            if (!string.IsNullOrWhiteSpace(programFilesX86)) candidates.Add(Path.Combine(programFilesX86, "Windows Defender", "MpCmdRun.exe"));
+            foreach (string candidate in candidates)
+            {
+                try { if (File.Exists(candidate)) return candidate; } catch { }
+            }
+            return FindExecutable("MpCmdRun.exe");
+        }
+
+        private static string FindExecutable(string fileName)
+        {
+            if (string.IsNullOrWhiteSpace(fileName)) return null;
+            var directories = new List<string>();
+            string systemRoot = Environment.GetEnvironmentVariable("SystemRoot");
+            if (!string.IsNullOrWhiteSpace(systemRoot)) directories.Add(Path.Combine(systemRoot, "System32"));
+            string path = Environment.GetEnvironmentVariable("PATH");
+            if (!string.IsNullOrWhiteSpace(path)) directories.AddRange(path.Split(new[] { Path.PathSeparator }, StringSplitOptions.RemoveEmptyEntries));
+            foreach (string directory in directories)
+            {
+                try
+                {
+                    string candidate = Path.Combine(directory.Trim().Trim('"'), fileName);
+                    if (File.Exists(candidate)) return candidate;
+                }
+                catch { }
+            }
+            return null;
+        }
+
+        private static int? ReadDotNetFrameworkRelease()
+        {
+            try
+            {
+                using (RegistryKey key = Registry.LocalMachine.OpenSubKey("SOFTWARE\\Microsoft\\NET Framework Setup\\NDP\\v4\\Full", false))
+                {
+                    if (key == null) return null;
+                    object value = key.GetValue("Release", null, RegistryValueOptions.DoNotExpandEnvironmentNames);
+                    int release;
+                    return value != null && int.TryParse(Convert.ToString(value), out release) ? (int?)release : null;
+                }
+            }
+            catch { return null; }
+        }
+
         private static int RunAudit(string requestedPath)
         {
             Section("只读安全审计");
@@ -1275,6 +1474,28 @@ namespace WindowsSecureToolkit
                 }
             }
             catch (Exception ex) { failures.Add("注册表白名单测试失败：" + ex.Message); }
+
+            try
+            {
+                List<DoctorCheck> doctorChecks = CollectDoctorChecks();
+                string doctorJson = Json.Serialize(new DoctorDocument
+                {
+                    GeneratedUtc = DateTime.UtcNow.ToString("o"),
+                    ComputerName = Environment.MachineName,
+                    Checks = doctorChecks
+                });
+                DoctorDocument doctorRoundTrip = Json.Deserialize<DoctorDocument>(doctorJson);
+                if (doctorRoundTrip == null || doctorRoundTrip.SchemaVersion != 1 || doctorRoundTrip.Checks == null || doctorRoundTrip.Checks.Count == 0)
+                {
+                    failures.Add("doctor JSON 往返测试失败。");
+                }
+            }
+            catch (Exception ex) { failures.Add("doctor 诊断测试失败：" + ex.Message); }
+
+            if (!IsSupportedBackupVersion("1.2.0") || !IsSupportedBackupVersion("1.2.1") || IsSupportedBackupVersion("0.1.0"))
+            {
+                failures.Add("旧版本备份兼容性测试失败。");
+            }
 
             string temp = Path.Combine(Path.GetTempPath(), "windows-secure-toolkit-selftest-" + Guid.NewGuid().ToString("N"));
             try

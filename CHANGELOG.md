@@ -6,6 +6,22 @@ All notable changes are documented here. Versions follow Semantic Versioning.
 
 No unreleased changes.
 
+## [1.3.0] - 2026-08-20
+
+### Added
+
+- A read-only `doctor` command for platform, .NET Framework, WMI, native-tool, and Defender capability checks.
+- `doctor --json` output with a versioned document schema for automation and issue reports.
+- A Windows validation matrix documenting what CI and local smoke tests do and do not prove.
+
+### Compatibility
+
+- Restore accepts v1.2.0 and v1.2.1 backup manifests when their machine, hash, schema, and allowlist checks pass.
+
+### Verification
+
+- Windows build, CMD smoke tests, `doctor`, `doctor --json`, and self-test passed locally and in GitHub Actions.
+
 ## [1.2.1] - 2026-08-20
 
 ### Fixed
@@ -39,7 +55,8 @@ Build, launch, version, self-test, audit, plan, report generation, listener list
 
 The first public Windows toolkit layout and safety documentation.
 
-[Unreleased]: https://github.com/KBT096/windows-secure-toolkit/compare/v1.2.1...HEAD
+[Unreleased]: https://github.com/KBT096/windows-secure-toolkit/compare/v1.3.0...HEAD
+[1.3.0]: https://github.com/KBT096/windows-secure-toolkit/releases/tag/v1.3.0
 [1.2.1]: https://github.com/KBT096/windows-secure-toolkit/releases/tag/v1.2.1
 [1.2.0]: https://github.com/KBT096/windows-secure-toolkit/releases/tag/v1.2.0
 [0.1.0]: https://github.com/KBT096/windows-secure-toolkit/releases/tag/v0.1.0

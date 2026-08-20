@@ -6,11 +6,11 @@
 
 Windows security settings are a bit like the fuse box: nobody wants to stare at it all day, but a small record is useful when something goes wrong.
 
-Current version: `1.2.1`.
+Current version: `1.3.0`.
 
 This is a small local toolkit with a CMD/BAT entry point and a C# engine. It checks, previews, backs up, and restores a conservative set of settings. It does not promise a magic “secure” button. Sadly, those are still out of stock.
 
-## What it does
+## Core architecture and features
 
 - read-only checks for firewall, Defender, UAC, SMBv1, Guest, RDP/NLA, AutoRun, updates, and pending reboot;
 - Markdown and JSON audit reports;
@@ -18,9 +18,10 @@ This is a small local toolkit with a CMD/BAT entry point and a C# engine. It che
 - a SHA-256 checked manifest and firewall backup before changes;
 - same-machine, allowlisted restore;
 - Defender quick scan, DISM/SFC verification, and TCP listener listing;
+- a read-only compatibility doctor for Windows, .NET Framework, WMI, and native tools, with JSON output;
 - GitHub Release metadata checks only. It does not download and run remote code.
 
-## What it does not do
+## Notes and boundaries
 
 - open inbound ports, enable RDP, or create administrator accounts;
 - reboot the computer or automatically repair DISM/SFC findings;
@@ -28,17 +29,18 @@ This is a small local toolkit with a CMD/BAT entry point and a C# engine. It che
 - bypass organization policy or endpoint management;
 - turn static checks into claims about every Windows edition.
 
-## Quick start
+## 📖📖 Quick entry: how do I configure and run Windows Secure Toolkit?
 
 The target is Windows 10/11 and Windows Server 2019/2022/2025. A compiled build needs .NET Framework 4.8; building from source needs the .NET 6 SDK or newer.
 
-No SDK? Grab `windows-secure-toolkit-v1.2.1-win-x64.zip` from the [v1.2.1 Release](https://github.com/KBT096/windows-secure-toolkit/releases/tag/v1.2.1), extract it, and run the entry point.
+No SDK? Grab `windows-secure-toolkit-v1.3.0-win-x64.zip` from the [v1.3.0 Release](https://github.com/KBT096/windows-secure-toolkit/releases/tag/v1.3.0), extract it, and run the entry point.
 
 ```cmd
 build.cmd
 win_secure.cmd self-test
 win_secure.cmd audit
 win_secure.cmd plan
+win_secure.cmd doctor
 win_secure.cmd apply
 ```
 
@@ -60,6 +62,7 @@ win_secure.cmd restore "C:\ProgramData\WindowsSecureToolkit\Backups\20260818-120
 | `win_secure.cmd scan` | Defender quick scan |
 | `win_secure.cmd verify` | DISM/SFC read-only verification |
 | `win_secure.cmd ports` | Show TCP listeners |
+| `win_secure.cmd doctor [--json]` | Read-only compatibility and dependency checks |
 | `win_secure.cmd update` | Check the latest Release |
 | `win_secure.cmd version` | Print the version |
 | `win_secure.cmd self-test` | Run the no-change self-test |
@@ -72,12 +75,19 @@ win_secure.cmd restore "C:\ProgramData\WindowsSecureToolkit\Backups\20260818-120
 - `win_secure.cmd` and `win_secure.bat` - user entry points;
 - `scripts/Test-Repository.cmd` - build and smoke-test gate;
 - `docs/THREAT_MODEL.md` - boundaries and threat model.
+- `docs/WINDOWS_VALIDATION.md` - doctor command and Windows validation matrix.
 
 ## Verification note
 
 Windows 11 Pro for Workstations build 26200 has been used for build, launch, version, self-test, audit, plan, reports, listener listing, and Release checks. Public GitHub Actions also builds and runs the smoke tests on Windows.
 
+`doctor` is a read-only capability probe. Missing optional components are reported as `Unavailable`, not silently changed. `doctor --json` emits a machine-readable document with a `SchemaVersion`, which is useful before collecting logs. Windows editions, organization policy, and third-party security software can legitimately produce different results.
+
 System-changing Apply/Restore has not been run on the maintainer machine. The release notes say so plainly. Read the plan, keep the backup, and do not expect Windows to clap when you click the button.
+
+## Copyright and component notice
+
+The code in this repository is released under the [MIT License](LICENSE). The build targets .NET Framework 4.8 and the runtime uses Windows components such as `netsh`, `dism`, `sfc`, `netstat`, WMI, and Microsoft Defender; their licensing and use remain subject to the applicable Microsoft Windows terms. CI uses GitHub Actions with a pinned `actions/checkout` revision for repository validation only. This repository does not bundle YABS, NextTrace, or other VPS probe components.
 
 ## Contributing and license
 
