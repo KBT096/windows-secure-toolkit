@@ -21,9 +21,15 @@ namespace WindowsSecureToolkit
 {
     internal static class Program
     {
-        private const string Version = "1.2.1";
+        private const string Version = "1.3.0";
         private const string ToolkitName = "Windows Secure Toolkit";
         private const string ReleaseApiUrl = "https://api.github.com/repos/KBT096/windows-secure-toolkit/releases/latest";
+        private static readonly HashSet<string> SupportedBackupVersions = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+        {
+            Version,
+            "1.2.0",
+            "1.2.1"
+        };
         private static readonly string[] RegistryAllowlist =
         {
             "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\System\\EnableLUA",
@@ -821,7 +827,7 @@ namespace WindowsSecureToolkit
 
             BaselineSnapshot snapshot = Json.Deserialize<BaselineSnapshot>(File.ReadAllText(manifestPath, Encoding.UTF8));
             if (snapshot == null || snapshot.SchemaVersion != 1) throw new InvalidOperationException("不支持的备份格式版本。");
-            if (!snapshot.ToolkitVersion.Equals(Version, StringComparison.OrdinalIgnoreCase)) throw new InvalidOperationException("备份版本与当前程序不匹配：" + snapshot.ToolkitVersion);
+            if (!IsSupportedBackupVersion(snapshot.ToolkitVersion)) throw new InvalidOperationException("备份版本与当前程序不兼容：" + snapshot.ToolkitVersion);
             if (!Environment.MachineName.Equals(snapshot.ComputerName, StringComparison.OrdinalIgnoreCase)) throw new InvalidOperationException("备份不是由当前计算机生成的。");
             if (!string.Equals(snapshot.FirewallExportFile, "firewall.wfw", StringComparison.Ordinal)) throw new InvalidOperationException("防火墙导出文件名不在白名单内。");
             string firewallPath = Path.Combine(directory, snapshot.FirewallExportFile);
@@ -835,6 +841,11 @@ namespace WindowsSecureToolkit
             }
             if (snapshot.Guest != null && (string.IsNullOrWhiteSpace(snapshot.Guest.Sid) || !snapshot.Guest.Sid.EndsWith("-501", StringComparison.OrdinalIgnoreCase))) throw new InvalidOperationException("备份中的 Guest SID 不合法。");
             return snapshot;
+        }
+
+        private static bool IsSupportedBackupVersion(string toolkitVersion)
+        {
+            return !string.IsNullOrWhiteSpace(toolkitVersion) && SupportedBackupVersions.Contains(toolkitVersion);
         }
 
         private static void ValidateRegistryAllowlist(IEnumerable<RegistrySnapshot> values)
@@ -1480,6 +1491,11 @@ namespace WindowsSecureToolkit
                 }
             }
             catch (Exception ex) { failures.Add("doctor 诊断测试失败：" + ex.Message); }
+
+            if (!IsSupportedBackupVersion("1.2.0") || !IsSupportedBackupVersion("1.2.1") || IsSupportedBackupVersion("0.1.0"))
+            {
+                failures.Add("旧版本备份兼容性测试失败。");
+            }
 
             string temp = Path.Combine(Path.GetTempPath(), "windows-secure-toolkit-selftest-" + Guid.NewGuid().ToString("N"));
             try
