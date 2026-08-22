@@ -4,7 +4,10 @@ All notable changes are documented here. Versions follow Semantic Versioning.
 
 ## [Unreleased]
 
-No unreleased changes.
+### Changed
+
+- Added a latest Release badge to the Chinese and English README entry points.
+- Added the repository-specific `windows-security-toolkit` GitHub topic without changing the implementation-language labels.
 
 ## [1.3.0] - 2026-08-20
 

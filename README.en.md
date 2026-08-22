@@ -1,6 +1,7 @@
 # Windows Secure Toolkit
 
 [![CI](https://github.com/KBT096/windows-secure-toolkit/actions/workflows/ci.yml/badge.svg)](https://github.com/KBT096/windows-secure-toolkit/actions/workflows/ci.yml)
+[![Latest Release](https://img.shields.io/github/v/release/KBT096/windows-secure-toolkit?display_name=tag&sort=semver)](https://github.com/KBT096/windows-secure-toolkit/releases/latest)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![C%23](https://img.shields.io/badge/C%23-.NET%20Framework%204.8-512BD4.svg)](https://dotnet.microsoft.com/)
 
