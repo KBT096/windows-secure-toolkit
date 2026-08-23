@@ -36,30 +36,44 @@ Windows 的安全设置有点像家里的电箱：平时没人想看，真出问
 
 支持 Windows 10/11 和 Windows Server 2019/2022/2025。运行已编译版本只需要 .NET Framework 4.8；从源码构建需要 .NET 6 SDK 或更高版本。
 
-不想装 SDK？可以从 [v1.3.0 Release](https://github.com/KBT096/windows-secure-toolkit/releases/tag/v1.3.0) 下载 `windows-secure-toolkit-v1.3.0-win-x64.zip`，解压后直接运行入口文件。
+### 第一步：准备工具并完成自检
+
+不需要安装 SDK 时，可以从 [v1.3.0 Release](https://github.com/KBT096/windows-secure-toolkit/releases/tag/v1.3.0) 下载 `windows-secure-toolkit-v1.3.0-win-x64.zip`，解压后进入目录。
+
+从源码运行时，在项目目录打开 CMD：
 
 ```cmd
 build.cmd
 win_secure.cmd self-test
-win_secure.cmd audit
-win_secure.cmd plan
-win_secure.cmd doctor
 ```
 
-第一次使用建议只读审计，然后看计划：
+`self-test` 只检查程序和清单处理，不修改系统设置。
+
+### 第二步：读取状态并预览计划
+
+第一次使用先完成只读检查。下面的命令不会应用安全基线：
 
 ```cmd
+win_secure.cmd doctor
 win_secure.cmd audit
 win_secure.cmd plan
 ```
 
-确认影响范围并以管理员身份打开 CMD 后，才运行：
+`doctor` 检查系统兼容性，`audit` 生成 Markdown 和 JSON 报告，`plan` 显示将要处理的项目和可能的影响。
+
+### 第三步：确认后应用设置
+
+阅读计划并确认影响范围后，以管理员身份打开 CMD，再运行：
 
 ```cmd
 win_secure.cmd apply
 ```
 
-恢复示例：
+应用前会先创建备份并再次请求确认。程序不会自动开放入站端口、启用 RDP 或创建管理员账户。
+
+### 第四步：需要时恢复备份
+
+恢复操作需要管理员权限，并会校验备份清单、计算机名称和 SHA-256：
 
 ```cmd
 win_secure.cmd restore "C:\ProgramData\WindowsSecureToolkit\Backups\20260818-120000"
