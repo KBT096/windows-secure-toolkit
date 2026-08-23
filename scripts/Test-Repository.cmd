@@ -23,13 +23,23 @@ call :require_file "%TOOL_ROOT%LICENSE"
 call :require_file "%TOOL_ROOT%SECURITY.md"
 call :require_file "%TOOL_ROOT%docs\THREAT_MODEL.md"
 call :require_file "%TOOL_ROOT%docs\WINDOWS_VALIDATION.md"
+call :require_file "%TOOL_ROOT%docs\SECURITY_REVIEW.md"
+call :require_file "%TOOL_ROOT%scripts\Security-Gate.cmd"
 
-findstr /s /i /n "Invoke-Expression certutil -decode" "%TOOL_ROOT%src\*.cs" "%TOOL_ROOT%*.cmd" >nul 2>nul
+findstr /s /i /n "Invoke-Expression certutil -decode" "%TOOL_ROOT%src\*.cs" "%TOOL_ROOT%win_secure.cmd" "%TOOL_ROOT%win_secure.bat" "%TOOL_ROOT%build.cmd" >nul 2>nul
 if not errorlevel 1 (
     echo [失败] 源码包含被禁止的动态远程执行模式。
     set /a FAILURES+=1
 ) else (
     echo [完成] 源码未发现动态远程执行模式。
+)
+
+call "%TOOL_ROOT%scripts\Security-Gate.cmd"
+if errorlevel 1 (
+    echo [失败] 安全回归门禁失败。
+    set /a FAILURES+=1
+) else (
+    echo [完成] 安全回归门禁通过。
 )
 
 call "%TOOL_ROOT%build.cmd"
