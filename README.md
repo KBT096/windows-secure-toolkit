@@ -116,4 +116,4 @@ win_secure.cmd restore "C:\ProgramData\WindowsSecureToolkit\Backups\20260818-120
 
 ## 许可证
 
-[MIT License](LICENSE)。本项目与 Microsoft 没有隶属或认可关系。
+本项目采用 MIT License。外部诊断工具仍分别受其上游许可证约束。
