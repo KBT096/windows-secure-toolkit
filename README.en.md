@@ -7,7 +7,7 @@
 
 Windows security settings are a bit like the fuse box: nobody wants to stare at it all day, but a small record is useful when something goes wrong.
 
-Current version: `1.3.0`.
+Current version: `1.3.1`.
 
 This is a small local toolkit with a CMD/BAT entry point and a C# engine. It checks, previews, backs up, and restores a conservative set of settings. It does not promise a magic “secure” button. Sadly, those are still out of stock.
 
@@ -18,6 +18,7 @@ This is a small local toolkit with a CMD/BAT entry point and a C# engine. It che
 - a preview-first baseline with explicit elevation and confirmation;
 - a SHA-256 checked manifest and firewall backup before changes;
 - same-machine, allowlisted restore;
+- a read-only backup listing with manifest and SHA-256 status;
 - Defender quick scan, DISM/SFC verification, and TCP listener listing;
 - a read-only compatibility doctor for Windows, .NET Framework, WMI, and native tools, with JSON output;
 - GitHub Release metadata checks only. It does not download and run remote code.
@@ -34,7 +35,7 @@ This is a small local toolkit with a CMD/BAT entry point and a C# engine. It che
 
 The target is Windows 10/11 and Windows Server 2019/2022/2025. A compiled build needs .NET Framework 4.8; building from source needs the .NET 6 SDK or newer.
 
-No SDK? Grab `windows-secure-toolkit-v1.3.0-win-x64.zip` from the [v1.3.0 Release](https://github.com/KBT096/windows-secure-toolkit/releases/tag/v1.3.0), extract it, and run the entry point.
+No SDK? Grab `windows-secure-toolkit-v1.3.1-win-x64.zip` from the [v1.3.1 Release](https://github.com/KBT096/windows-secure-toolkit/releases/tag/v1.3.1), extract it, and run the entry point.
 
 ```cmd
 build.cmd
@@ -60,6 +61,7 @@ win_secure.cmd restore "C:\ProgramData\WindowsSecureToolkit\Backups\20260818-120
 | `win_secure.cmd plan` | Preview only |
 | `win_secure.cmd apply [--yes]` | Back up and apply the baseline |
 | `win_secure.cmd restore <path>` | Validate and restore a backup |
+| `win_secure.cmd backups [path] [--json]` | List backups and manifest status without changes |
 | `win_secure.cmd scan` | Defender quick scan |
 | `win_secure.cmd verify` | DISM/SFC read-only verification |
 | `win_secure.cmd ports` | Show TCP listeners |

@@ -7,7 +7,7 @@
 
 Windows 的安全设置有点像家里的电箱：平时没人想看，真出问题又希望它有记录。
 
-当前版本：`1.3.0`。
+当前版本：`1.3.1`。
 
 这个小工具从 CMD/BAT 进去，用 C# 做检查、预览、备份和恢复。它不负责把电脑变成“绝对安全”，只负责把常见的几件事做得清楚一点。
 
@@ -18,6 +18,7 @@ Windows 的安全设置有点像家里的电箱：平时没人想看，真出问
 - 预览一套保守基线，确认以后才应用；
 - 应用前保存清单、SHA-256 和防火墙策略；
 - 在同一台电脑上校验后恢复备份；
+- 只读列出本机备份目录，并显示清单和 SHA-256 状态；
 - Defender 快速扫描、DISM/SFC 只读检查、TCP 监听端口查看；
 - 本机兼容性诊断：平台、.NET Framework、WMI 和原生命令能力，支持 JSON 输出；
 - 只查询 GitHub Release 版本，不下载脚本，更不会下载完就“相信它”。
@@ -38,7 +39,7 @@ Windows 的安全设置有点像家里的电箱：平时没人想看，真出问
 
 ### 第一步：准备工具并完成自检
 
-不需要安装 SDK 时，可以从 [v1.3.0 Release](https://github.com/KBT096/windows-secure-toolkit/releases/tag/v1.3.0) 下载 `windows-secure-toolkit-v1.3.0-win-x64.zip`，解压后进入目录。
+不需要安装 SDK 时，可以从 [v1.3.1 Release](https://github.com/KBT096/windows-secure-toolkit/releases/tag/v1.3.1) 下载 `windows-secure-toolkit-v1.3.1-win-x64.zip`，解压后进入目录。
 
 从源码运行时，在项目目录打开 CMD：
 
@@ -73,6 +74,12 @@ win_secure.cmd apply
 
 ### 第四步：需要时恢复备份
 
+先查看备份目录和清单状态：
+
+```cmd
+win_secure.cmd backups
+```
+
 恢复操作需要管理员权限，并会校验备份清单、计算机名称和 SHA-256：
 
 ```cmd
@@ -88,6 +95,7 @@ win_secure.cmd restore "C:\ProgramData\WindowsSecureToolkit\Backups\20260818-120
 | `win_secure.cmd plan` | 预览，不修改系统 |
 | `win_secure.cmd apply [--yes]` | 备份并应用基线 |
 | `win_secure.cmd restore <路径>` | 校验并恢复备份 |
+| `win_secure.cmd backups [目录] [--json]` | 只读列出备份及清单状态 |
 | `win_secure.cmd scan` | Defender 快速扫描 |
 | `win_secure.cmd verify` | DISM/SFC 只读验证 |
 | `win_secure.cmd ports` | TCP 监听端口 |
@@ -114,7 +122,7 @@ win_secure.cmd restore "C:\ProgramData\WindowsSecureToolkit\Backups\20260818-120
 
 `doctor` 是只读能力探测，不会因为缺少可选组件就修改系统；`doctor --json` 输出带 `SchemaVersion` 的机器可读结果，适合在收集日志前先确认环境。不同 Windows 版本、组织策略和第三方防护软件可能使某些项目显示为 `Unavailable`，这代表需要人工复核，不代表工具已经替你修复。
 
-实际修改系统的 Apply/Restore 流程没有在维护者机器上执行，因此发布说明不会把它写成已经覆盖所有环境。请先看计划，备份也别删，电脑通常不会因为你多看一眼就生气。
+实际修改系统的 Apply/Restore 流程没有在维护者机器上执行，因此发布说明不会把它写成已经覆盖所有环境。请先看计划并保留备份。
 
 ## 参与和报告问题
 
