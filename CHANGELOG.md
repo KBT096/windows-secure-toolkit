@@ -8,6 +8,8 @@ All notable changes are documented here. Versions follow Semantic Versioning.
 
 - Added a latest Release badge to the Chinese and English README entry points.
 - Added the repository-specific `windows-security-toolkit` GitHub topic without changing the implementation-language labels.
+- Reworked the Chinese README quick entry into numbered preparation, preview, apply, and restore steps.
+- Rephrased the Chinese notes as direct, neutral statements.
 
 ## [1.3.0] - 2026-08-20
 

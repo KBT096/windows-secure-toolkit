@@ -24,42 +24,56 @@ Windows 的安全设置有点像家里的电箱：平时没人想看，真出问
 
 ## 注意事项
 
-- 不自动开放入站端口、打开 RDP 或创建管理员；
-- 不自动重启，也不替你修复 DISM/SFC；
-- 不上传审计结果、用户名、IP 或其他本机数据；
-- 不绕过组织策略、MDM 或安全产品；
-- 不把静态检查写成“所有 Windows 版本都实测通过”。
+- 入站端口、RDP 和管理员账户由用户明确决定，工具不会代为开放或创建；
+- 系统重启与 DISM/SFC 修复由用户决定，工具只执行检查和验证；
+- 审计结果、用户名、IP 和其他本机数据只保存在本地，不上传；
+- 组织策略、MDM 和安全产品保留对系统设置的控制权；
+- 静态检查结果按验证范围标注，不替代所有 Windows 版本的实机验证。
 
-如果你的电脑由公司策略管理，策略可能在下一次刷新时把本地设置改回去。这不是程序闹脾气，是 Windows 的工作方式。
+如果电脑由公司策略管理，本地设置可能在策略刷新后恢复；请以组织策略和后续审计结果为准。
 
 ## 📖📖 快速入门：如何配置与运行 Windows Secure Toolkit？
 
 支持 Windows 10/11 和 Windows Server 2019/2022/2025。运行已编译版本只需要 .NET Framework 4.8；从源码构建需要 .NET 6 SDK 或更高版本。
 
-不想装 SDK？可以从 [v1.3.0 Release](https://github.com/KBT096/windows-secure-toolkit/releases/tag/v1.3.0) 下载 `windows-secure-toolkit-v1.3.0-win-x64.zip`，解压后直接运行入口文件。
+### 第一步：准备工具并完成自检
+
+不需要安装 SDK 时，可以从 [v1.3.0 Release](https://github.com/KBT096/windows-secure-toolkit/releases/tag/v1.3.0) 下载 `windows-secure-toolkit-v1.3.0-win-x64.zip`，解压后进入目录。
+
+从源码运行时，在项目目录打开 CMD：
 
 ```cmd
 build.cmd
 win_secure.cmd self-test
-win_secure.cmd audit
-win_secure.cmd plan
-win_secure.cmd doctor
 ```
 
-第一次使用建议只读审计，然后看计划：
+`self-test` 只检查程序和清单处理，不修改系统设置。
+
+### 第二步：读取状态并预览计划
+
+第一次使用先完成只读检查。下面的命令不会应用安全基线：
 
 ```cmd
+win_secure.cmd doctor
 win_secure.cmd audit
 win_secure.cmd plan
 ```
 
-确认影响范围并以管理员身份打开 CMD 后，才运行：
+`doctor` 检查系统兼容性，`audit` 生成 Markdown 和 JSON 报告，`plan` 显示将要处理的项目和可能的影响。
+
+### 第三步：确认后应用设置
+
+阅读计划并确认影响范围后，以管理员身份打开 CMD，再运行：
 
 ```cmd
 win_secure.cmd apply
 ```
 
-恢复示例：
+应用前会先创建备份并再次请求确认。程序不会自动开放入站端口、启用 RDP 或创建管理员账户。
+
+### 第四步：需要时恢复备份
+
+恢复操作需要管理员权限，并会校验备份清单、计算机名称和 SHA-256：
 
 ```cmd
 win_secure.cmd restore "C:\ProgramData\WindowsSecureToolkit\Backups\20260818-120000"
