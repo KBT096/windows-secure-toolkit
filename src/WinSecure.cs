@@ -21,12 +21,13 @@ namespace WindowsSecureToolkit
 {
     internal static class Program
     {
-        private const string Version = "1.3.0";
+        private const string Version = "1.3.1";
         private const string ToolkitName = "Windows Secure Toolkit";
         private const string ReleaseApiUrl = "https://api.github.com/repos/KBT096/windows-secure-toolkit/releases/latest";
         private static readonly HashSet<string> SupportedBackupVersions = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
         {
             Version,
+            "1.3.0",
             "1.2.0",
             "1.2.1"
         };
@@ -81,6 +82,7 @@ namespace WindowsSecureToolkit
                             return 2;
                         }
                         return RunRestore(options.BackupPath);
+                    case "backups": return RunBackupList(options.BackupPath, options.JsonOutput);
                     case "scan": return RunDefenderScan();
                     case "verify": return RunSystemVerify();
                     case "ports": return ShowListeningPorts();
@@ -135,6 +137,7 @@ namespace WindowsSecureToolkit
             Console.WriteLine("  plan                         预览基线，不修改系统");
             Console.WriteLine("  apply [--yes]                备份并交互式应用基线");
             Console.WriteLine("  restore <备份目录或清单>      校验并恢复本工具管理的设置");
+            Console.WriteLine("  backups [目录] [--json]      只读列出本机备份及清单状态");
             Console.WriteLine("  scan                         运行 Defender 快速扫描");
             Console.WriteLine("  verify                       运行 DISM/SFC 只读验证");
             Console.WriteLine("  ports                        查看 TCP 监听端口");
@@ -160,6 +163,7 @@ namespace WindowsSecureToolkit
             Console.WriteLine("8. 检查版本");
             Console.WriteLine("9. 自检");
             Console.WriteLine("10. 本机兼容性诊断（只读）");
+            Console.WriteLine("11. 查看备份目录（只读）");
             Console.WriteLine("0. 退出");
             Console.Write("请选择：");
             string choice = Console.ReadLine();
@@ -177,6 +181,7 @@ namespace WindowsSecureToolkit
                 case "8": return CheckForUpdate();
                 case "9": return RunSelfTest();
                 case "10": return RunDoctor(false);
+                case "11": return RunBackupList(null, false);
                 case "0": return 0;
                 default: Message("错误", "没有这个选项。"); return 2;
             }
@@ -208,6 +213,7 @@ namespace WindowsSecureToolkit
                 result.Action = NormalizeAction(command);
                 if (result.Action == "audit" && index < args.Length && !args[index].StartsWith("-")) result.ReportPath = args[index++];
                 if (result.Action == "restore" && index < args.Length && !args[index].StartsWith("-")) result.BackupPath = args[index++];
+                if (result.Action == "backups" && index < args.Length && !args[index].StartsWith("-")) result.BackupPath = args[index++];
 
                 while (index < args.Length)
                 {
@@ -243,7 +249,8 @@ namespace WindowsSecureToolkit
                 if (action == "listeningports") return "ports";
                 if (action == "updatecheck") return "update";
                 if (action == "selftest") return "self-test";
-                string[] known = { "menu", "audit", "apply", "plan", "restore", "scan", "verify", "ports", "doctor", "update", "version", "self-test", "help" };
+                if (action == "backup-list" || action == "list-backups" || action == "backup") return "backups";
+                string[] known = { "menu", "audit", "apply", "plan", "restore", "backups", "scan", "verify", "ports", "doctor", "update", "version", "self-test", "help" };
                 if (!known.Contains(action)) throw new ArgumentException("未知命令：" + value);
                 return action;
             }
@@ -921,6 +928,104 @@ namespace WindowsSecureToolkit
             return results.Any(item => item.Status == "Failed") ? 4 : 0;
         }
 
+        private sealed class BackupListDocument
+        {
+            public int SchemaVersion = 1;
+            public string ToolkitVersion = Version;
+            public string GeneratedUtc;
+            public string Root;
+            public List<BackupEntry> Backups;
+        }
+
+        private sealed class BackupEntry
+        {
+            public string Status;
+            public string Path;
+            public string CreatedUtc;
+            public string ToolkitVersion;
+            public string ComputerName;
+            public string Detail;
+        }
+
+        private static int RunBackupList(string suppliedPath, bool jsonOutput)
+        {
+            string root = string.IsNullOrWhiteSpace(suppliedPath)
+                ? Path.Combine(DataRoot(true), "Backups")
+                : Path.GetFullPath(suppliedPath);
+            var entries = new List<BackupEntry>();
+            if (Directory.Exists(root))
+            {
+                foreach (string directory in Directory.GetDirectories(root).OrderByDescending(Directory.GetLastWriteTimeUtc))
+                {
+                    var entry = new BackupEntry
+                    {
+                        Status = "Missing",
+                        Path = directory,
+                        Detail = "缺少 manifest.json"
+                    };
+                    string manifestPath = Path.Combine(directory, "manifest.json");
+                    if (File.Exists(manifestPath))
+                    {
+                        try
+                        {
+                            BaselineSnapshot raw = Json.Deserialize<BaselineSnapshot>(File.ReadAllText(manifestPath, Encoding.UTF8));
+                            if (raw != null)
+                            {
+                                entry.CreatedUtc = raw.CreatedUtc;
+                                entry.ToolkitVersion = raw.ToolkitVersion;
+                                entry.ComputerName = raw.ComputerName;
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            entry.Detail = "清单读取失败：" + ex.Message;
+                        }
+                        try
+                        {
+                            ReadAndValidateManifest(manifestPath);
+                            entry.Status = "Ready";
+                            entry.Detail = "清单与 SHA-256 校验通过";
+                        }
+                        catch (Exception ex)
+                        {
+                            entry.Status = "Review";
+                            entry.Detail = ex.Message;
+                        }
+                    }
+                    entries.Add(entry);
+                }
+            }
+
+            var document = new BackupListDocument
+            {
+                GeneratedUtc = DateTime.UtcNow.ToString("o"),
+                Root = root,
+                Backups = entries
+            };
+            if (jsonOutput)
+            {
+                Console.WriteLine(Json.Serialize(document));
+                return 0;
+            }
+
+            Section("本机备份目录");
+            Console.WriteLine("目录：" + root);
+            if (entries.Count == 0)
+            {
+                Message("信息", "尚未找到备份目录。");
+                return 0;
+            }
+            Console.WriteLine();
+            Console.WriteLine("Status   CreatedUtc                 Version  Path");
+            Console.WriteLine("------   -------------------------  -------  ----");
+            foreach (BackupEntry entry in entries)
+            {
+                Console.WriteLine("{0,-8} {1,-25} {2,-8} {3}", entry.Status, entry.CreatedUtc ?? "-", entry.ToolkitVersion ?? "-", entry.Path);
+                if (!string.IsNullOrWhiteSpace(entry.Detail)) Console.WriteLine("         " + entry.Detail);
+            }
+            return 0;
+        }
+
         private static void SetDefenderSnapshot(DefenderState state)
         {
             using (var searcher = new ManagementObjectSearcher("root\\Microsoft\\Windows\\Defender", "SELECT * FROM MSFT_MpPreference"))
@@ -1492,7 +1597,7 @@ namespace WindowsSecureToolkit
             }
             catch (Exception ex) { failures.Add("doctor 诊断测试失败：" + ex.Message); }
 
-            if (!IsSupportedBackupVersion("1.2.0") || !IsSupportedBackupVersion("1.2.1") || IsSupportedBackupVersion("0.1.0"))
+            if (!IsSupportedBackupVersion("1.3.0") || !IsSupportedBackupVersion("1.2.0") || !IsSupportedBackupVersion("1.2.1") || IsSupportedBackupVersion("0.1.0"))
             {
                 failures.Add("旧版本备份兼容性测试失败。");
             }

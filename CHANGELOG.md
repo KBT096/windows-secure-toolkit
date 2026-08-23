@@ -4,12 +4,21 @@ All notable changes are documented here. Versions follow Semantic Versioning.
 
 ## [Unreleased]
 
+No unreleased changes.
+
+## [1.3.1] - 2026-08-23
+
+### Added
+
+- Added a read-only `backups` command that lists local backup directories and manifest/SHA-256 status.
+
 ### Changed
 
 - Added a latest Release badge to the Chinese and English README entry points.
 - Added the repository-specific `windows-security-toolkit` GitHub topic without changing the implementation-language labels.
 - Reworked the Chinese README quick entry into numbered preparation, preview, apply, and restore steps.
 - Rephrased the Chinese notes as direct, neutral statements.
+- Added the backup listing command to the smoke-test path.
 
 ## [1.3.0] - 2026-08-20
 
@@ -60,7 +69,8 @@ Build, launch, version, self-test, audit, plan, report generation, listener list
 
 The first public Windows toolkit layout and safety documentation.
 
-[Unreleased]: https://github.com/KBT096/windows-secure-toolkit/compare/v1.3.0...HEAD
+[Unreleased]: https://github.com/KBT096/windows-secure-toolkit/compare/v1.3.1...HEAD
+[1.3.1]: https://github.com/KBT096/windows-secure-toolkit/releases/tag/v1.3.1
 [1.3.0]: https://github.com/KBT096/windows-secure-toolkit/releases/tag/v1.3.0
 [1.2.1]: https://github.com/KBT096/windows-secure-toolkit/releases/tag/v1.2.1
 [1.2.0]: https://github.com/KBT096/windows-secure-toolkit/releases/tag/v1.2.0

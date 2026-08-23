@@ -23,6 +23,7 @@
 - 保守基线的预览、确认、执行和逐项结果；
 - Defender 扫描、DISM/SFC 验证、监听端口与版本检查；
 - 只读 `doctor` 兼容性诊断及其 JSON 输出；
+- 只读 `backups` 备份目录和清单状态查看；
 - 交互菜单、命令行参数和无修改自检。
 
 `src/WindowsSecureToolkit.csproj` 目标为 .NET Framework 4.8，避免给支持的 Windows 系统再塞一个常驻运行时。
@@ -51,6 +52,7 @@
 - 版本、帮助和计划模式；
 - 审计报告生成与 JSON 文件；
 - `doctor` 人类可读和 `--json` 两种输出；
+- `backups --json` 备份目录状态输出；
 - 缺少恢复路径时的错误码；
 - 不存在旧脚本核心和动态远程执行模式。
 

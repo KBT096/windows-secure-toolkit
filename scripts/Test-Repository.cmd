@@ -55,6 +55,7 @@ call :run_ok help
 call :run_ok plan
 call :run_ok doctor
 call :run_ok_args doctor --json
+call :run_ok_args backups --json
 
 if exist "%TEST_ROOT%" rmdir /s /q "%TEST_ROOT%"
 mkdir "%TEST_ROOT%" >nul 2>nul
