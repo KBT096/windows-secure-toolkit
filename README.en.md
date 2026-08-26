@@ -29,7 +29,10 @@ This is a small local toolkit with a CMD/BAT entry point and a C# engine. It che
 - reboot the computer or automatically repair DISM/SFC findings;
 - upload reports, usernames, IP addresses, or other local data;
 - bypass organization policy or endpoint management;
-- turn static checks into claims about every Windows edition.
+- claim that every Windows edition or policy environment has been tested;
+- treat the maintainer's Windows 10/11 runtime validation as a guarantee for every managed or customized machine.
+
+The maintainer has completed real, backed-up `Apply` and `Restore` validation on Windows 10 and Windows 11. If behavior differs, please open an [Issue](https://github.com/KBT096/windows-secure-toolkit/issues) with the toolkit version, Windows edition/build, elevation state, exact command, and sanitized output. Do not attach secrets, raw audit reports, or private system identifiers.
 
 ## 📖📖 Quick entry: how do I configure and run Windows Secure Toolkit?
 

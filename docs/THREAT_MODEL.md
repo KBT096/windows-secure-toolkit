@@ -78,7 +78,7 @@ Controls:
 Residual risk:
 
 - users still need to verify the repository, account, and downloaded archive;
-- the project does not currently publish signed release artifacts.
+- release archives are not currently Authenticode-signed; SHA-256 and Git tag traceability do not establish publisher trust.
 
 ### Sensitive-data disclosure
 

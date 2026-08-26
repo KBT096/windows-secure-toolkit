@@ -4,7 +4,10 @@ All notable changes are documented here. Versions follow Semantic Versioning.
 
 ## [Unreleased]
 
-No unreleased changes.
+### Changed
+
+- Documented maintainer runtime validation of `Apply` and `Restore` on Windows 10 and Windows 11.
+- Clarified that GitHub Actions remains a non-privileged smoke-test gate while real system-changing validation is recorded separately.
 
 ## [1.3.2] - 2026-08-26
 
@@ -71,7 +74,7 @@ No unreleased changes.
 
 ### Verification note
 
-Build, launch, version, self-test, audit, plan, report generation, listener listing, and release checks were run on Windows 11 Pro for Workstations build 26200. System-changing Apply/Restore remains explicitly unverified on the maintainer machine.
+Build, launch, version, self-test, audit, plan, report generation, listener listing, and release checks were run on Windows 11 Pro for Workstations build 26200. At the time of v1.2.0, system-changing Apply/Restore was explicitly unverified on the maintainer machine; current Windows 10/11 runtime validation is documented in `docs/WINDOWS_VALIDATION.md`.
 
 ## [0.1.0] - 2026-08-18
 

@@ -18,11 +18,11 @@ The `apply` path enables Windows Firewall profiles and manages the documented lo
 
 `scripts\\Security-Gate.cmd` scans the executable C# source and CMD/BAT entry points for the rejected patterns. `scripts\\Test-Repository.cmd` runs the gate locally and in GitHub Actions, so a future change that reintroduces one of these patterns fails the repository validation job.
 
-The scan intentionally excludes documentation, because this review and the threat model name rejected patterns as explanatory text. A passing static scan is evidence of source shape, not proof that every runtime configuration is safe.
+The scan intentionally excludes documentation, because this review and the threat model name rejected patterns as explanatory text. A passing static scan is evidence of source shape; the maintainer's separate Windows 10/11 runtime validation covers the privileged paths but does not prove that every runtime configuration is safe.
 
 ## Remaining limits
 
-- Apply and Restore system-changing paths remain unexecuted on the maintainer workstation;
+- Apply and Restore system-changing paths have been exercised by the maintainer on Windows 10 and Windows 11; this does not cover every edition, policy combination, or managed environment;
 - Windows Firewall, Group Policy, cloud security groups, and router rules are environment-specific;
 - release archives are traceable to tags and SHA-256 digests but are not currently code-signed;
 - this gate does not replace code review or an isolated virtual-machine test.

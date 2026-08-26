@@ -29,7 +29,8 @@ Windows 的安全设置有点像家里的电箱：平时没人想看，真出问
 - 系统重启与 DISM/SFC 修复由用户决定，工具只执行检查和验证；
 - 审计结果、用户名、IP 和其他本机数据只保存在本地，不上传；
 - 组织策略、MDM 和安全产品保留对系统设置的控制权；
-- 静态检查结果按验证范围标注，不替代所有 Windows 版本的实机验证。
+- `Apply` / `Restore` 已由维护者在 Windows 10 和 Windows 11 上完成实机验证；其他版本、组织策略和安全产品环境仍需自行确认；
+- GitHub Actions 主要覆盖构建和只读烟雾测试，不代表所有 Windows 版本或策略环境都已验证。
 
 如果电脑由公司策略管理，本地设置可能在策略刷新后恢复；请以组织策略和后续审计结果为准。
 
@@ -120,7 +121,8 @@ win_secure.cmd restore "C:\ProgramData\WindowsSecureToolkit\Backups\20260818-120
 
 - 普通问题请使用 [Issues](https://github.com/KBT096/windows-secure-toolkit/issues)；
 - 可能暴露系统数据的问题请按照 [SECURITY.md](SECURITY.md) 私下报告；
-- 提交代码前请阅读 [CONTRIBUTING.md](CONTRIBUTING.md)。
+- 提交代码前请阅读 [CONTRIBUTING.md](CONTRIBUTING.md)；
+- 如果在 Windows 10/11 上遇到问题，请附上版本、Windows 版本/构建号、是否以管理员身份运行、完整命令和脱敏输出，不要上传备份或原始审计报告。
 
 当前维护者：[@KBT096](https://github.com/KBT096)。
 

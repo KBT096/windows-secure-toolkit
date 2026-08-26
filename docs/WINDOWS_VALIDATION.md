@@ -15,13 +15,15 @@ The JSON form has `SchemaVersion`, `ToolkitVersion`, `GeneratedUtc`, `ComputerNa
 
 ## Current matrix
 
-| Surface | Local Windows 11 Pro for Workstations build 26200 | GitHub Actions Windows runner | What it proves |
-| --- | --- | --- | --- |
-| C# build | Verified | Verified | The checked-in source compiles for .NET Framework 4.8 |
-| CMD/BAT entry points | Verified | Verified | The real Windows entry point forwards exit codes |
-| `self-test`, `version`, `help`, `plan` | Verified | Verified | Core parsing and no-change checks run |
-| `doctor` and `doctor --json` | Verified | Verified | Diagnostic output is available without system changes |
-| Audit reports | Verified | Verified | Markdown and JSON reports can be generated |
-| Apply / Restore | Not run on the maintainer machine | Not run | Static coverage does not replace a deliberate, backed-up system test |
+| Surface | Windows 10 maintainer test | Windows 11 Pro for Workstations build 26200 maintainer test | GitHub Actions Windows runner | What it proves |
+| --- | --- | --- | --- | --- |
+| C# build | Not recorded in this matrix | Verified | Verified | The checked-in source compiles for .NET Framework 4.8 |
+| CMD/BAT entry points | Not recorded in this matrix | Verified | Verified | The real Windows entry point forwards exit codes |
+| `self-test`, `version`, `help`, `plan` | Not recorded in this matrix | Verified | Verified | Core parsing and no-change checks run |
+| `doctor` and `doctor --json` | Not recorded in this matrix | Verified | Verified | Diagnostic output is available without system changes |
+| Audit reports | Not recorded in this matrix | Verified | Verified | Markdown and JSON reports can be generated |
+| Apply / Restore | Verified by the maintainer | Verified by the maintainer | Not run | The real privileged paths were exercised locally on both versions; CI intentionally does not perform system-changing operations |
 
-The CI job is a smoke-test gate, not a privileged deployment test. Before reporting a real Apply or Restore result, record the Windows edition/build, elevation state, exact command, backup path, and whether a reboot or policy refresh occurred.
+The maintainer has completed backed-up `Apply` and `Restore` validation on Windows 10 and Windows 11 through the normal elevated and confirmation flow. This is version-level evidence from the maintainer's test machines; it is not a claim that every Windows edition, policy combination, or managed environment behaves identically. A `Not recorded in this matrix` entry means that a separate result for that surface was not retained here; it does not mean the command is unsupported.
+
+The CI job remains a smoke-test gate, not a privileged deployment test. If behavior differs on Windows 10 or Windows 11, open an [Issue](https://github.com/KBT096/windows-secure-toolkit/issues) with the toolkit version, Windows edition/build, elevation state, exact command, sanitized output, and whether the backup was retained. Do not attach secrets, raw audit reports, or private system identifiers.
