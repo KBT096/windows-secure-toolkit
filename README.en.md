@@ -7,7 +7,7 @@
 
 Windows security settings are a bit like the fuse box: nobody wants to stare at it all day, but a small record is useful when something goes wrong.
 
-Current version: `1.3.1`.
+Current version: `1.3.2`.
 
 This is a small local toolkit with a CMD/BAT entry point and a C# engine. It checks, previews, backs up, and restores a conservative set of settings. It does not promise a magic “secure” button. Sadly, those are still out of stock.
 
@@ -79,14 +79,6 @@ win_secure.cmd restore "C:\ProgramData\WindowsSecureToolkit\Backups\20260818-120
 - `scripts/Test-Repository.cmd` - build and smoke-test gate;
 - `docs/THREAT_MODEL.md` - boundaries and threat model.
 - `docs/WINDOWS_VALIDATION.md` - doctor command and Windows validation matrix.
-
-## Verification note
-
-Windows 11 Pro for Workstations build 26200 has been used for build, launch, version, self-test, audit, plan, reports, listener listing, and Release checks. Public GitHub Actions also builds and runs the smoke tests on Windows.
-
-`doctor` is a read-only capability probe. Missing optional components are reported as `Unavailable`, not silently changed. `doctor --json` emits a machine-readable document with a `SchemaVersion`, which is useful before collecting logs. Windows editions, organization policy, and third-party security software can legitimately produce different results.
-
-System-changing Apply/Restore has not been run on the maintainer machine. The release notes say so plainly. Read the plan, keep the backup, and do not expect Windows to clap when you click the button.
 
 ## Copyright and component notice
 

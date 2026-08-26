@@ -7,7 +7,7 @@
 
 Windows 的安全设置有点像家里的电箱：平时没人想看，真出问题又希望它有记录。
 
-当前版本：`1.3.1`。
+当前版本：`1.3.2`。
 
 这个小工具从 CMD/BAT 进去，用 C# 做检查、预览、备份和恢复。它不负责把电脑变成“绝对安全”，只负责把常见的几件事做得清楚一点。
 
@@ -115,14 +115,6 @@ win_secure.cmd restore "C:\ProgramData\WindowsSecureToolkit\Backups\20260818-120
 - `scripts/Test-Repository.cmd`：构建、入口和报告烟雾测试；
 - `docs/THREAT_MODEL.md`：边界和威胁模型。
 - `docs/WINDOWS_VALIDATION.md`：诊断命令与 Windows 验证矩阵。
-
-## 验证范围
-
-本机 Windows 11 专业工作站版 build 26200 已验证：C# 构建、CMD/BAT 启动、版本、自检、审计、计划、报告生成、端口查看和 Release 检查。公开 GitHub Actions 也会在 Windows runner 上构建并运行烟雾测试。
-
-`doctor` 是只读能力探测，不会因为缺少可选组件就修改系统；`doctor --json` 输出带 `SchemaVersion` 的机器可读结果，适合在收集日志前先确认环境。不同 Windows 版本、组织策略和第三方防护软件可能使某些项目显示为 `Unavailable`，这代表需要人工复核，不代表工具已经替你修复。
-
-实际修改系统的 Apply/Restore 流程没有在维护者机器上执行，因此发布说明不会把它写成已经覆盖所有环境。请先看计划并保留备份。
 
 ## 参与和报告问题
 

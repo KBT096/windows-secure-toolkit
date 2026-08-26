@@ -21,7 +21,7 @@ namespace WindowsSecureToolkit
 {
     internal static class Program
     {
-        private const string Version = "1.3.1";
+        private const string Version = "1.3.2";
         private const string ToolkitName = "Windows Secure Toolkit";
         private const string ReleaseApiUrl = "https://api.github.com/repos/KBT096/windows-secure-toolkit/releases/latest";
         private static readonly HashSet<string> SupportedBackupVersions = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
