@@ -35,7 +35,7 @@ This is a small local toolkit with a CMD/BAT entry point and a C# engine. It che
 
 The target is Windows 10/11 and Windows Server 2019/2022/2025. A compiled build needs .NET Framework 4.8; building from source needs the .NET 6 SDK or newer.
 
-No SDK? Grab `windows-secure-toolkit-v1.3.1-win-x64.zip` from the [v1.3.1 Release](https://github.com/KBT096/windows-secure-toolkit/releases/tag/v1.3.1), extract it, and run the entry point.
+No SDK? Open the [latest Release](https://github.com/KBT096/windows-secure-toolkit/releases), choose the Windows x64 archive, extract it, and run the entry point.
 
 ```cmd
 build.cmd

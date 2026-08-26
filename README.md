@@ -39,7 +39,7 @@ Windows 的安全设置有点像家里的电箱：平时没人想看，真出问
 
 ### 第一步：准备工具并完成自检
 
-不需要安装 SDK 时，可以从 [v1.3.1 Release](https://github.com/KBT096/windows-secure-toolkit/releases/tag/v1.3.1) 下载 `windows-secure-toolkit-v1.3.1-win-x64.zip`，解压后进入目录。
+不需要安装 SDK 时，打开[最新 Release](https://github.com/KBT096/windows-secure-toolkit/releases)，选择 Windows x64 压缩包，解压后进入目录。
 
 从源码运行时，在项目目录打开 CMD：
 
