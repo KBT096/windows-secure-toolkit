@@ -6,6 +6,14 @@ All notable changes are documented here. Versions follow Semantic Versioning.
 
 No unreleased changes.
 
+## [1.3.2] - 2026-08-26
+
+### Changed
+
+- Synchronized the toolkit version metadata for the maintenance release.
+- Kept quick-start downloads on the general Releases page so patch releases do not require a README filename edit.
+- Kept the README focused on setup and issue reporting for this maintenance release.
+
 ## [1.3.1] - 2026-08-23
 
 ### Added
@@ -69,7 +77,8 @@ Build, launch, version, self-test, audit, plan, report generation, listener list
 
 The first public Windows toolkit layout and safety documentation.
 
-[Unreleased]: https://github.com/KBT096/windows-secure-toolkit/compare/v1.3.1...HEAD
+[Unreleased]: https://github.com/KBT096/windows-secure-toolkit/compare/v1.3.2...HEAD
+[1.3.2]: https://github.com/KBT096/windows-secure-toolkit/releases/tag/v1.3.2
 [1.3.1]: https://github.com/KBT096/windows-secure-toolkit/releases/tag/v1.3.1
 [1.3.0]: https://github.com/KBT096/windows-secure-toolkit/releases/tag/v1.3.0
 [1.2.1]: https://github.com/KBT096/windows-secure-toolkit/releases/tag/v1.2.1
