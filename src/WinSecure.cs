@@ -21,12 +21,13 @@ namespace WindowsSecureToolkit
 {
     internal static class Program
     {
-        private const string Version = "1.3.2";
+        private const string Version = "1.3.3";
         private const string ToolkitName = "Windows Secure Toolkit";
         private const string ReleaseApiUrl = "https://api.github.com/repos/KBT096/windows-secure-toolkit/releases/latest";
         private static readonly HashSet<string> SupportedBackupVersions = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
         {
             Version,
+            "1.3.1",
             "1.3.0",
             "1.2.0",
             "1.2.1"
@@ -1597,7 +1598,7 @@ namespace WindowsSecureToolkit
             }
             catch (Exception ex) { failures.Add("doctor 诊断测试失败：" + ex.Message); }
 
-            if (!IsSupportedBackupVersion("1.3.0") || !IsSupportedBackupVersion("1.2.0") || !IsSupportedBackupVersion("1.2.1") || IsSupportedBackupVersion("0.1.0"))
+            if (!IsSupportedBackupVersion("1.3.1") || !IsSupportedBackupVersion("1.3.0") || !IsSupportedBackupVersion("1.2.0") || !IsSupportedBackupVersion("1.2.1") || IsSupportedBackupVersion("0.1.0"))
             {
                 failures.Add("旧版本备份兼容性测试失败。");
             }
