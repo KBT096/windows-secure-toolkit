@@ -7,7 +7,7 @@
 
 Windows security settings are a bit like the fuse box: nobody wants to stare at it all day, but a small record is useful when something goes wrong.
 
-Current version: `1.3.2`.
+Current version: `1.3.3`.
 
 This is a small local toolkit with a CMD/BAT entry point and a C# engine. It checks, previews, backs up, and restores a conservative set of settings. It does not promise a magic “secure” button. Sadly, those are still out of stock.
 

@@ -4,10 +4,19 @@ All notable changes are documented here. Versions follow Semantic Versioning.
 
 ## [Unreleased]
 
-### Changed
+No unreleased changes.
 
-- Documented maintainer runtime validation of `Apply` and `Restore` on Windows 10 and Windows 11.
-- Clarified that GitHub Actions remains a non-privileged smoke-test gate while real system-changing validation is recorded separately.
+## [1.3.3] - 2026-08-28
+
+### Fixed
+
+- Added v1.3.1 to the restore backup-version allowlist so backups from the previous maintenance release remain restorable.
+- Added a self-test assertion for v1.3.1 backup compatibility.
+
+### Documentation
+
+- Recorded maintainer runtime validation of `Apply` and `Restore` on Windows 10 and Windows 11 in the validation notes.
+- Clarified that GitHub Actions remains a non-privileged smoke-test gate.
 
 ## [1.3.2] - 2026-08-26
 
@@ -80,7 +89,8 @@ Build, launch, version, self-test, audit, plan, report generation, listener list
 
 The first public Windows toolkit layout and safety documentation.
 
-[Unreleased]: https://github.com/KBT096/windows-secure-toolkit/compare/v1.3.2...HEAD
+[Unreleased]: https://github.com/KBT096/windows-secure-toolkit/compare/v1.3.3...HEAD
+[1.3.3]: https://github.com/KBT096/windows-secure-toolkit/releases/tag/v1.3.3
 [1.3.2]: https://github.com/KBT096/windows-secure-toolkit/releases/tag/v1.3.2
 [1.3.1]: https://github.com/KBT096/windows-secure-toolkit/releases/tag/v1.3.1
 [1.3.0]: https://github.com/KBT096/windows-secure-toolkit/releases/tag/v1.3.0
