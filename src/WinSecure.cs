@@ -21,12 +21,14 @@ namespace WindowsSecureToolkit
 {
     internal static class Program
     {
-        private const string Version = "1.3.3";
+        private const string Version = "1.4.0";
         private const string ToolkitName = "Windows Secure Toolkit";
         private const string ReleaseApiUrl = "https://api.github.com/repos/KBT096/windows-secure-toolkit/releases/latest";
         private static readonly HashSet<string> SupportedBackupVersions = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
         {
             Version,
+            "1.3.3",
+            "1.3.2",
             "1.3.1",
             "1.3.0",
             "1.2.0",
@@ -74,7 +76,7 @@ namespace WindowsSecureToolkit
                 switch (options.Action)
                 {
                     case "menu": return ShowMenu();
-                    case "audit": return RunAudit(options.ReportPath);
+                    case "audit": return RunAudit(options.ReportPath, options.JsonOutput);
                     case "apply": return RunApply(options.DryRun, options.Yes);
                     case "restore":
                         if (string.IsNullOrWhiteSpace(options.BackupPath))
@@ -135,6 +137,7 @@ namespace WindowsSecureToolkit
             Console.WriteLine();
             Console.WriteLine("  menu                         打开交互菜单");
             Console.WriteLine("  audit [报告目录或 .md]       生成只读 Markdown + JSON 报告");
+            Console.WriteLine("  audit --json                 将只读审计 JSON 输出到标准输出");
             Console.WriteLine("  plan                         预览基线，不修改系统");
             Console.WriteLine("  apply [--yes]                备份并交互式应用基线");
             Console.WriteLine("  restore <备份目录或清单>      校验并恢复本工具管理的设置");
@@ -170,7 +173,7 @@ namespace WindowsSecureToolkit
             string choice = Console.ReadLine();
             switch (choice)
             {
-                case "1": return RunAudit(null);
+                case "1": return RunAudit(null, false);
                 case "2": return RunApply(true, false);
                 case "3": return RunApply(false, false);
                 case "4":
@@ -237,6 +240,8 @@ namespace WindowsSecureToolkit
                     else throw new ArgumentException("无法识别选项：" + arg);
                 }
                 if (result.Action == "plan") { result.Action = "apply"; result.DryRun = true; }
+                if (result.Action == "audit" && result.JsonOutput && !string.IsNullOrWhiteSpace(result.ReportPath))
+                    throw new ArgumentException("audit --json 不能同时指定报告路径。");
                 return result;
             }
 
@@ -1062,9 +1067,140 @@ namespace WindowsSecureToolkit
             public List<AuditItem> Items;
         }
 
+        private sealed class BitLockerState
+        {
+            public string DriveLetter;
+            public int? ProtectionStatus;
+            public int? ConversionStatus;
+            public int? EncryptionMethod;
+            public string Error;
+        }
+
+        private sealed class SecureBootState
+        {
+            public bool? Enabled;
+            public string Detail;
+        }
+
         private static AuditItem Item(string status, string category, string id, string summary, string detail = "", string recommendation = "")
         {
             return new AuditItem { Status = status, Category = category, Id = id, Summary = summary, Detail = detail, Recommendation = recommendation };
+        }
+
+        private static BitLockerState ReadBitLockerState()
+        {
+            string systemDrive = Environment.GetEnvironmentVariable("SystemDrive");
+            var state = new BitLockerState
+            {
+                DriveLetter = string.IsNullOrWhiteSpace(systemDrive) ? null : systemDrive.TrimEnd('\\')
+            };
+            if (string.IsNullOrWhiteSpace(state.DriveLetter))
+            {
+                state.Error = "无法确定 Windows 系统卷。";
+                return state;
+            }
+
+            try
+            {
+                using (var searcher = new ManagementObjectSearcher(
+                    "root\\CIMV2\\Security\\MicrosoftVolumeEncryption",
+                    "SELECT DriveLetter, ProtectionStatus, ConversionStatus, EncryptionMethod FROM Win32_EncryptableVolume"))
+                using (ManagementObjectCollection results = searcher.Get())
+                {
+                    ManagementObject volume = results.Cast<ManagementObject>().FirstOrDefault(item =>
+                        state.DriveLetter.Equals(Convert.ToString(item["DriveLetter"]), StringComparison.OrdinalIgnoreCase));
+                    if (volume == null)
+                    {
+                        state.Error = "BitLocker 提供程序没有返回系统卷。";
+                        return state;
+                    }
+
+                    if (volume["ProtectionStatus"] != null) state.ProtectionStatus = Convert.ToInt32(volume["ProtectionStatus"]);
+                    if (volume["ConversionStatus"] != null) state.ConversionStatus = Convert.ToInt32(volume["ConversionStatus"]);
+                    if (volume["EncryptionMethod"] != null) state.EncryptionMethod = Convert.ToInt32(volume["EncryptionMethod"]);
+                }
+            }
+            catch (UnauthorizedAccessException)
+            {
+                state.Error = "当前权限无法读取 BitLocker 状态；可从提升后的 CMD 重新运行 audit。";
+            }
+            catch (ManagementException ex)
+            {
+                state.Error = ex.ErrorCode == ManagementStatus.AccessDenied
+                    ? "当前权限无法读取 BitLocker 状态；可从提升后的 CMD 重新运行 audit。"
+                    : "BitLocker WMI 提供程序不可用：" + ex.Message;
+            }
+            catch (Exception ex)
+            {
+                state.Error = "BitLocker 状态读取失败：" + ex.Message;
+            }
+            return state;
+        }
+
+        private static SecureBootState ReadSecureBootState()
+        {
+            try
+            {
+                RegistrySnapshot snapshot = ReadDword(
+                    "HKLM\\SYSTEM\\CurrentControlSet\\Control\\SecureBoot\\State",
+                    "UEFISecureBootEnabled");
+                if (!snapshot.Exists)
+                {
+                    return new SecureBootState
+                    {
+                        Detail = "未找到 UEFISecureBootEnabled；设备可能使用传统 BIOS，或当前 Windows 环境不公开该状态。"
+                    };
+                }
+                if (snapshot.Kind != "DWord" || (snapshot.Value != 0 && snapshot.Value != 1))
+                {
+                    return new SecureBootState
+                    {
+                        Detail = "UEFISecureBootEnabled 的类型或值不在预期范围内。"
+                    };
+                }
+                return new SecureBootState
+                {
+                    Enabled = snapshot.Value == 1,
+                    Detail = "UEFISecureBootEnabled=" + snapshot.Value
+                };
+            }
+            catch (Exception ex)
+            {
+                return new SecureBootState { Detail = "安全启动状态读取失败：" + ex.Message };
+            }
+        }
+
+        private static AuditItem CreateBitLockerAuditItem(BitLockerState state)
+        {
+            if (state == null || !state.ProtectionStatus.HasValue || !state.ConversionStatus.HasValue)
+            {
+                return Item(
+                    "Unavailable",
+                    "磁盘",
+                    "bitlocker",
+                    "无法确认系统卷 BitLocker 状态",
+                    state == null ? "BitLocker 状态不可用。" : state.Error,
+                    "Unavailable 不表示磁盘未加密；必要时从提升后的 CMD 重新审计。");
+            }
+
+            string detail = "Drive=" + state.DriveLetter
+                + "; ProtectionStatus=" + state.ProtectionStatus
+                + "; ConversionStatus=" + state.ConversionStatus
+                + "; EncryptionMethod=" + (state.EncryptionMethod.HasValue ? state.EncryptionMethod.Value.ToString() : "未知");
+            if (state.ProtectionStatus == 1 && state.ConversionStatus == 1)
+                return Item("Pass", "磁盘", "bitlocker", "系统卷 BitLocker 保护已开启且已完成加密", detail);
+            if (state.ProtectionStatus == 0 && state.ConversionStatus == 0)
+                return Item("Review", "磁盘", "bitlocker", "系统卷 BitLocker 保护未开启", detail, "确认恢复密钥保存位置后，再按设备与组织策略评估是否启用。");
+            return Item("Review", "磁盘", "bitlocker", "系统卷 BitLocker 状态需要复核", detail, "检查加密进度、保护器和恢复密钥保管状态。");
+        }
+
+        private static AuditItem CreateSecureBootAuditItem(SecureBootState state)
+        {
+            if (state == null || !state.Enabled.HasValue)
+                return Item("Unavailable", "启动", "secure-boot", "无法确认安全启动状态", state == null ? "安全启动状态不可用。" : state.Detail);
+            return state.Enabled.Value
+                ? Item("Pass", "启动", "secure-boot", "UEFI 安全启动已开启", state.Detail)
+                : Item("Review", "启动", "secure-boot", "UEFI 安全启动未开启", state.Detail, "确认固件模式、磁盘布局和兼容性后，再在固件设置中评估是否启用。");
         }
 
         private static List<AuditItem> CollectAudit()
@@ -1117,8 +1253,8 @@ namespace WindowsSecureToolkit
             bool pending = Registry.LocalMachine.OpenSubKey("SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Component Based Servicing\\RebootPending") != null || Registry.LocalMachine.OpenSubKey("SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\WindowsUpdate\\Auto Update\\RebootRequired") != null;
             items.Add(Item(pending ? "Info" : "Pass", "维护", "pending-reboot", pending ? "检测到待重启状态" : "未检测到待重启状态"));
 
-            items.Add(Item("Unavailable", "磁盘", "bitlocker", "当前版本不读取 BitLocker 状态"));
-            items.Add(Item("Unavailable", "启动", "secure-boot", "当前版本不读取安全启动状态"));
+            items.Add(CreateBitLockerAuditItem(ReadBitLockerState()));
+            items.Add(CreateSecureBootAuditItem(ReadSecureBootState()));
             items.Add(Item("Info", "网络", "listening-ports", "监听端口请使用 ports 命令查看；监听不等于公网开放"));
             return items;
         }
@@ -1367,23 +1503,43 @@ namespace WindowsSecureToolkit
             catch { return null; }
         }
 
-        private static int RunAudit(string requestedPath)
+        private static AuditDocument CreateAuditDocument(List<AuditItem> items)
         {
-            Section("只读安全审计");
-            Message("信息", "正在读取本机安全配置，不修改系统设置。");
+            return new AuditDocument
+            {
+                GeneratedUtc = DateTime.UtcNow.ToString("o"),
+                ComputerName = Environment.MachineName,
+                Items = items
+            };
+        }
+
+        private static int RunAudit(string requestedPath, bool jsonOutput)
+        {
+            if (!jsonOutput)
+            {
+                Section("只读安全审计");
+                Message("信息", "正在读取本机安全配置，不修改系统设置。");
+            }
             List<AuditItem> items = CollectAudit();
+            AuditDocument document = CreateAuditDocument(items);
+            if (jsonOutput)
+            {
+                Console.WriteLine(Json.Serialize(document));
+                return 0;
+            }
+
             foreach (AuditItem item in items)
             {
                 Console.WriteLine("{0,-12} {1,-8} {2,-18} {3}", item.Status, item.Category, item.Id, item.Summary);
             }
-            string[] paths = WriteAuditReports(items, requestedPath);
+            string[] paths = WriteAuditReports(document, requestedPath);
             Message("完成", "Markdown 报告：" + paths[0]);
             Message("完成", "JSON 报告：" + paths[1]);
             if (items.Any(item => item.Status == "Review")) Message("警告", "有项目需要人工复核；这不等同于确认存在漏洞。");
             return 0;
         }
 
-        private static string[] WriteAuditReports(List<AuditItem> items, string requestedPath)
+        private static string[] WriteAuditReports(AuditDocument document, string requestedPath)
         {
             string directory;
             string markdownPath;
@@ -1403,14 +1559,6 @@ namespace WindowsSecureToolkit
                 jsonPath = Path.Combine(directory, stem + ".json");
             }
             Directory.CreateDirectory(directory);
-            var document = new AuditDocument
-            {
-                SchemaVersion = 1,
-                ToolkitVersion = Version,
-                GeneratedUtc = DateTime.UtcNow.ToString("o"),
-                ComputerName = Environment.MachineName,
-                Items = items
-            };
             File.WriteAllText(jsonPath, Json.Serialize(document), new UTF8Encoding(false));
             var markdown = new StringBuilder();
             markdown.AppendLine("# Windows Secure Toolkit audit");
@@ -1421,7 +1569,7 @@ namespace WindowsSecureToolkit
             markdown.AppendLine();
             markdown.AppendLine("| Status | Category | Id | Summary | Detail |");
             markdown.AppendLine("| --- | --- | --- | --- | --- |");
-            foreach (AuditItem item in items)
+            foreach (AuditItem item in document.Items)
             {
                 markdown.AppendLine("| " + SafeMarkdown(item.Status) + " | " + SafeMarkdown(item.Category) + " | " + SafeMarkdown(item.Id) + " | " + SafeMarkdown(item.Summary) + " | " + SafeMarkdown(item.Detail) + " |");
             }
@@ -1539,6 +1687,14 @@ namespace WindowsSecureToolkit
             var failures = new List<string>();
             Version parsed;
             if (!System.Version.TryParse(Version, out parsed)) failures.Add("版本号不是有效的语义版本。");
+            System.Version assemblyVersion = Assembly.GetExecutingAssembly().GetName().Version;
+            if (assemblyVersion == null
+                || assemblyVersion.Major != parsed.Major
+                || assemblyVersion.Minor != parsed.Minor
+                || assemblyVersion.Build != parsed.Build)
+            {
+                failures.Add("程序集版本与工具版本不一致。");
+            }
             if (!ReleaseApiUrl.StartsWith("https://api.github.com/", StringComparison.OrdinalIgnoreCase)) failures.Add("Release API 地址不是受限的 HTTPS 地址。");
             if (Quote("C:\\a b\\file.txt") != "\"C:\\a b\\file.txt\"") failures.Add("命令行路径引用测试失败。");
             var expected = new RegistrySnapshot
@@ -1598,10 +1754,41 @@ namespace WindowsSecureToolkit
             }
             catch (Exception ex) { failures.Add("doctor 诊断测试失败：" + ex.Message); }
 
-            if (!IsSupportedBackupVersion("1.3.1") || !IsSupportedBackupVersion("1.3.0") || !IsSupportedBackupVersion("1.2.0") || !IsSupportedBackupVersion("1.2.1") || IsSupportedBackupVersion("0.1.0"))
+            string[] compatibleBackups = { "1.3.3", "1.3.2", "1.3.1", "1.3.0", "1.2.1", "1.2.0" };
+            if (!compatibleBackups.All(IsSupportedBackupVersion) || !IsSupportedBackupVersion(Version) || IsSupportedBackupVersion("0.1.0"))
             {
                 failures.Add("旧版本备份兼容性测试失败。");
             }
+
+            try
+            {
+                AuditItem protectedVolume = CreateBitLockerAuditItem(new BitLockerState
+                {
+                    DriveLetter = "C:",
+                    ProtectionStatus = 1,
+                    ConversionStatus = 1,
+                    EncryptionMethod = 6
+                });
+                AuditItem unprotectedVolume = CreateBitLockerAuditItem(new BitLockerState
+                {
+                    DriveLetter = "C:",
+                    ProtectionStatus = 0,
+                    ConversionStatus = 0,
+                    EncryptionMethod = 0
+                });
+                AuditItem secureBootOn = CreateSecureBootAuditItem(new SecureBootState { Enabled = true, Detail = "self-test" });
+                AuditItem secureBootOff = CreateSecureBootAuditItem(new SecureBootState { Enabled = false, Detail = "self-test" });
+                AuditItem secureBootUnknown = CreateSecureBootAuditItem(new SecureBootState { Detail = "self-test" });
+                if (protectedVolume.Status != "Pass"
+                    || unprotectedVolume.Status != "Review"
+                    || secureBootOn.Status != "Pass"
+                    || secureBootOff.Status != "Review"
+                    || secureBootUnknown.Status != "Unavailable")
+                {
+                    failures.Add("BitLocker 或安全启动状态映射测试失败。");
+                }
+            }
+            catch (Exception ex) { failures.Add("磁盘与启动审计测试失败：" + ex.Message); }
 
             string temp = Path.Combine(Path.GetTempPath(), "windows-secure-toolkit-selftest-" + Guid.NewGuid().ToString("N"));
             try
