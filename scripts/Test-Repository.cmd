@@ -59,6 +59,17 @@ call :run_ok_args backups --json
 
 if exist "%TEST_ROOT%" rmdir /s /q "%TEST_ROOT%"
 mkdir "%TEST_ROOT%" >nul 2>nul
+call "%TOOL_ROOT%win_secure.cmd" audit --json > "%TEST_ROOT%\audit-stdout.json"
+if errorlevel 1 (
+    echo [失败] audit --json 命令失败。
+    set /a FAILURES+=1
+) else (
+    echo [完成] audit --json 命令通过。
+    call :require_text "%TEST_ROOT%\audit-stdout.json" "SchemaVersion"
+    call :require_text "%TEST_ROOT%\audit-stdout.json" "bitlocker"
+    call :require_text "%TEST_ROOT%\audit-stdout.json" "secure-boot"
+)
+
 call "%TOOL_ROOT%win_secure.cmd" audit "%TEST_ROOT%"
 if errorlevel 1 (
     echo [失败] 审计报告命令失败。
@@ -105,6 +116,17 @@ if errorlevel 1 (
     set /a FAILURES+=1
 ) else (
     echo [完成] 已生成：%~1
+)
+exit /b 0
+
+:require_text
+set /a CHECKS+=1
+findstr /i /c:"%~2" "%~1" >nul 2>nul
+if errorlevel 1 (
+    echo [失败] %~1 缺少文本：%~2
+    set /a FAILURES+=1
+) else (
+    echo [完成] %~1 包含文本：%~2
 )
 exit /b 0
 

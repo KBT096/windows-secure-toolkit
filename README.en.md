@@ -7,14 +7,15 @@
 
 Windows security settings are a bit like the fuse box: nobody wants to stare at it all day, but a small record is useful when something goes wrong.
 
-Current version: `1.3.3`.
+Current version: `1.4.0`.
 
 This is a small local toolkit with a CMD/BAT entry point and a C# engine. It checks, previews, backs up, and restores a conservative set of settings. It does not promise a magic “secure” button. Sadly, those are still out of stock.
 
 ## Core architecture and features
 
-- read-only checks for firewall, Defender, UAC, SMBv1, Guest, RDP/NLA, AutoRun, updates, and pending reboot;
+- read-only checks for firewall, Defender, UAC, SMBv1, Guest, RDP/NLA, AutoRun, BitLocker, Secure Boot, updates, and pending reboot;
 - Markdown and JSON audit reports;
+- `audit --json` for machine-readable output on standard output;
 - a preview-first baseline with explicit elevation and confirmation;
 - a SHA-256 checked manifest and firewall backup before changes;
 - same-machine, allowlisted restore;
@@ -44,12 +45,15 @@ No SDK? Open the [latest Release](https://github.com/KBT096/windows-secure-toolk
 build.cmd
 win_secure.cmd self-test
 win_secure.cmd audit
+win_secure.cmd audit --json
 win_secure.cmd plan
 win_secure.cmd doctor
 win_secure.cmd apply
 ```
 
 Run `apply` from an elevated CMD only after reading the plan. Restore example:
+
+BitLocker status can require an elevated CMD on some systems. `Unavailable` means that the state was not confirmed; it does not mean that the volume is unencrypted.
 
 ```cmd
 win_secure.cmd restore "C:\ProgramData\WindowsSecureToolkit\Backups\20260818-120000"
@@ -61,6 +65,7 @@ win_secure.cmd restore "C:\ProgramData\WindowsSecureToolkit\Backups\20260818-120
 | --- | --- |
 | `win_secure.cmd` | Open the menu |
 | `win_secure.cmd audit [path]` | Write Markdown + JSON reports |
+| `win_secure.cmd audit --json` | Write the read-only audit JSON to standard output |
 | `win_secure.cmd plan` | Preview only |
 | `win_secure.cmd apply [--yes]` | Back up and apply the baseline |
 | `win_secure.cmd restore <path>` | Validate and restore a backup |

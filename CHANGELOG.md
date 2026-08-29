@@ -6,6 +6,20 @@ All notable changes are documented here. Versions follow Semantic Versioning.
 
 No unreleased changes.
 
+## [1.4.0] - 2026-08-30
+
+### Added
+
+- Added read-only system-volume BitLocker and UEFI Secure Boot status to the audit.
+- Added `audit --json` for machine-readable audit output on standard output.
+- Added smoke-test and self-test coverage for the new audit fields and status mappings.
+- Aligned the EXE assembly and file metadata with toolkit version 1.4.0 and added a self-test guard.
+
+### Compatibility
+
+- Restore now accepts valid v1.3.2 and v1.3.3 backup manifests in addition to the existing compatible versions.
+- An unavailable BitLocker provider or insufficient read permission is reported as `Unavailable`, not as an unencrypted volume.
+
 ## [1.3.3] - 2026-08-28
 
 ### Fixed
@@ -89,7 +103,8 @@ Build, launch, version, self-test, audit, plan, report generation, listener list
 
 The first public Windows toolkit layout and safety documentation.
 
-[Unreleased]: https://github.com/KBT096/windows-secure-toolkit/compare/v1.3.3...HEAD
+[Unreleased]: https://github.com/KBT096/windows-secure-toolkit/compare/v1.4.0...HEAD
+[1.4.0]: https://github.com/KBT096/windows-secure-toolkit/releases/tag/v1.4.0
 [1.3.3]: https://github.com/KBT096/windows-secure-toolkit/releases/tag/v1.3.3
 [1.3.2]: https://github.com/KBT096/windows-secure-toolkit/releases/tag/v1.3.2
 [1.3.1]: https://github.com/KBT096/windows-secure-toolkit/releases/tag/v1.3.1

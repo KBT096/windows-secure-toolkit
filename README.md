@@ -7,14 +7,15 @@
 
 Windows 的安全设置有点像家里的电箱：平时没人想看，真出问题又希望它有记录。
 
-当前版本：`1.3.3`。
+当前版本：`1.4.0`。
 
 这个小工具从 CMD/BAT 进去，用 C# 做检查、预览、备份和恢复。它不负责把电脑变成“绝对安全”，只负责把常见的几件事做得清楚一点。
 
 ## 核心架构与功能
 
-- 只读审计：防火墙、Defender、UAC、SMBv1、Guest、RDP/NLA、AutoRun、更新服务和待重启状态；
+- 只读审计：防火墙、Defender、UAC、SMBv1、Guest、RDP/NLA、AutoRun、BitLocker、安全启动、更新服务和待重启状态；
 - 生成 Markdown 和 JSON 报告；
+- 支持 `audit --json` 将机器可读结果直接输出到标准输出；
 - 预览一套保守基线，确认以后才应用；
 - 应用前保存清单、SHA-256 和防火墙策略；
 - 在同一台电脑上校验后恢复备份；
@@ -58,10 +59,11 @@ win_secure.cmd self-test
 ```cmd
 win_secure.cmd doctor
 win_secure.cmd audit
+win_secure.cmd audit --json
 win_secure.cmd plan
 ```
 
-`doctor` 检查系统兼容性，`audit` 生成 Markdown 和 JSON 报告，`plan` 显示将要处理的项目和可能的影响。
+`doctor` 检查系统兼容性，`audit` 生成 Markdown 和 JSON 报告，`audit --json` 为自动化输出纯 JSON，`plan` 显示将要处理的项目和可能的影响。BitLocker 状态在部分系统上需要从提升后的 CMD 读取；`Unavailable` 表示没有确认到状态，不等于磁盘未加密。
 
 ### 第三步：确认后应用设置
 
@@ -93,6 +95,7 @@ win_secure.cmd restore "C:\ProgramData\WindowsSecureToolkit\Backups\20260818-120
 | --- | --- |
 | `win_secure.cmd` | 打开菜单 |
 | `win_secure.cmd audit [路径]` | 生成 Markdown + JSON 审计报告 |
+| `win_secure.cmd audit --json` | 将只读审计 JSON 输出到标准输出 |
 | `win_secure.cmd plan` | 预览，不修改系统 |
 | `win_secure.cmd apply [--yes]` | 备份并应用基线 |
 | `win_secure.cmd restore <路径>` | 校验并恢复备份 |
